@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 
-// ─── ANONYMOUS USAGE SCHEMA ──────────────────────────────────────────────────
-// Tracks usage for users who have not logged in
-// Identified by a hash of their IP address + User-Agent
-const anonymousUsageSchema = new mongoose.Schema({
+// ─── GUEST USAGE SCHEMA ──────────────────────────────────────────────────────
+// Tracks usage for users who have not created an account, identified by a
+// SHA-256 fingerprint of IP + User-Agent (no raw PII stored).
+// Model name: GuestUsage (distinct from AnonymousUsage).
+// New code should prefer AnonymousUsage for anonymous tracking; this model
+// is available for sessions that need a separate collection.
+const guestUsageSchema = new mongoose.Schema({
 
-  // SHA256 hash of IP + User-Agent (never store raw IP for privacy)
   fingerprint: {
     type: String,
     required: true,
@@ -13,19 +15,16 @@ const anonymousUsageSchema = new mongoose.Schema({
     index: true,
   },
 
-  // Current month usage
   errorsThisMonth: {
     type: Number,
     default: 0,
   },
 
-  // Which month we are tracking
   currentMonth: {
     type: String,
     default: () => new Date().toISOString().slice(0, 7),
   },
 
-  // All-time total
   totalErrors: {
     type: Number,
     default: 0,
@@ -39,8 +38,7 @@ const anonymousUsageSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-// ─── INSTANCE METHOD: Reset if new month ────────────────────────────────────
-anonymousUsageSchema.methods.resetIfNewMonth = function () {
+guestUsageSchema.methods.resetIfNewMonth = function () {
   const currentMonth = new Date().toISOString().slice(0, 7);
   if (this.currentMonth !== currentMonth) {
     this.errorsThisMonth = 0;
@@ -48,12 +46,11 @@ anonymousUsageSchema.methods.resetIfNewMonth = function () {
   }
 };
 
-
-// TTL index — auto-delete anonymous records after 90 days of inactivity
-anonymousUsageSchema.index(
+// Auto-delete guest records after 90 days of inactivity
+guestUsageSchema.index(
   { lastSeenAt: 1 },
-  { expireAfterSeconds: 60 * 60 * 24 * 90 } // 90 days
+  { expireAfterSeconds: 60 * 60 * 24 * 90 }
 );
 
 
-module.exports = mongoose.model('AnonymousUsage', anonymousUsageSchema);
+module.exports = mongoose.model('GuestUsage', guestUsageSchema);

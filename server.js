@@ -2,6 +2,7 @@ require('dotenv').config();
 const express    = require('express');
 const cors       = require('cors');
 const helmet     = require('helmet');
+const morgan     = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit  = require('express-rate-limit');
 const connectDB  = require('./config/db');
@@ -14,13 +15,19 @@ const app = express();
 // ── SECURITY HEADERS (Helmet) ─────────────────────────────────
 app.use(helmet());
 
+// ── REQUEST LOGGING (Morgan) ──────────────────────────────────
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+}
+
 // ── CORS ──────────────────────────────────────────────────────
 // ONLY your frontend can talk to this backend
 const allowedOrigins = [
   process.env.ALLOWED_ORIGIN,        // e.g. https://code-dost.vercel.app
+  process.env.FRONTEND_URL,          // alternative env var name
   'http://localhost:3000',            // Local development
   'http://127.0.0.1:5500',           // VS Code Live Server
-];
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -38,6 +45,20 @@ app.use(cors({
 app.use(express.json({ limit: '50kb' }));    // Max 50kb request body
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// ── CSRF PROTECTION ───────────────────────────────────────────
+// For state-mutating requests using cookie auth, verify the Origin header
+// matches an allowed origin. Requests without an Origin (e.g. Postman,
+// curl, mobile apps) are allowed through for development/API access.
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origin = req.headers.origin;
+  if (!origin) return next(); // non-browser clients allowed
+  if (!allowedOrigins.includes(origin)) {
+    return res.status(403).json({ success: false, error: 'CSRF: request origin not allowed.' });
+  }
+  next();
+});
 
 // ── TRUST PROXY ───────────────────────────────────────────────
 // Required for correct IP detection behind Render/Railway/Heroku
@@ -72,6 +93,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth',         authLimiter, require('./routes/auth'));
 app.use('/api/analyze',      require('./routes/analyze'));
 app.use('/api/subscription', require('./routes/subscription'));
+app.use('/api/user',         require('./routes/user'));
 
 // ── HEALTH CHECK ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

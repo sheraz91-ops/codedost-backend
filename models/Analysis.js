@@ -1,92 +1,54 @@
 const mongoose = require('mongoose');
 
-// ─── ANALYSIS LOG SCHEMA ─────────────────────────────────────────────────────
-// Stores every code analysis — for analytics, rate limiting, and admin dashboard
-const analysisLogSchema = new mongoose.Schema({
+// ─── SUBSCRIPTION PLAN SCHEMA ────────────────────────────────────────────────
+// Stores named subscription plans with their feature limits.
+// Individual user subscriptions are tracked in the User model;
+// this collection defines the available plans and their quotas.
+const subscriptionPlanSchema = new mongoose.Schema({
 
-  // Who made the request
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null, // null = anonymous user
-  },
-
-  // For anonymous users — track by IP + fingerprint
-  anonymousId: {
-    type: String, // hash of IP + user agent
-    default: null,
-  },
-
-  // What tier was used
-  tier: {
+  name: {
     type: String,
-    enum: ['anonymous', 'free', 'pro'],
+    enum: ['free', 'pro'],
+    required: true,
+    unique: true,
+  },
+
+  displayName: {
+    type: String,
     required: true,
   },
 
-  // The analysis
-  language: {
-    type: String,
-    enum: ['python', 'javascript', 'java', 'cpp', 'html', 'sql'],
+  // Monthly analysis quota (-1 = unlimited)
+  monthlyLimit: {
+    type: Number,
     required: true,
+    default: 20,
   },
 
-  errorType: {
-    type: String, // e.g. "SyntaxError", "TypeError"
-    trim: true,
+  // Max lines of code per submission (-1 = unlimited)
+  maxLines: {
+    type: Number,
+    required: true,
+    default: 1000,
   },
 
-  mistakeCategory: {
-    type: String, // e.g. "syntax_error", "type_error"
-    trim: true,
-  },
-
-  severity: {
-    type: String,
-    enum: ['beginner', 'intermediate', 'advanced'],
-  },
-
-  // Line count of submitted code
-  lineCount: {
+  // Price in USD (0 = free)
+  priceUSD: {
     type: Number,
     default: 0,
   },
 
-  // AI provider used
-  provider: {
-    type: String,
-    enum: ['groq', 'gemini', 'openrouter'],
-    default: 'groq',
+  features: {
+    type: [String],
+    default: [],
   },
 
-  // Language mode selected
-  mode: {
-    type: String,
-    enum: ['urdu', 'mixed', 'english'],
-    default: 'urdu',
-  },
-
-  // Whether user marked as "understood"
-  understood: {
+  isActive: {
     type: Boolean,
-    default: null, // null = not rated
-  },
-
-  // Month for easy aggregation (format: "2026-03")
-  month: {
-    type: String,
-    default: () => new Date().toISOString().slice(0, 7),
+    default: true,
   },
 
 }, { timestamps: true });
 
 
-// ─── INDEXES ──────────────────────────────────────────────────────────────────
-analysisLogSchema.index({ userId: 1, month: 1 });
-analysisLogSchema.index({ anonymousId: 1, month: 1 });
-analysisLogSchema.index({ createdAt: -1 });
-analysisLogSchema.index({ mistakeCategory: 1 });
-analysisLogSchema.index({ language: 1 });
-
-
-module.exports = mongoose.model('AnalysisLog', analysisLogSchema);
+module.exports = mongoose.model('SubscriptionPlan', subscriptionPlanSchema);
