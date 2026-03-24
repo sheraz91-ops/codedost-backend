@@ -1,0 +1,1948 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeDost API Documentation</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap");
+
+      :root {
+        --bg: #0e0e10;
+        --bg-s: #161618;
+        --bg-e: #1e1e22;
+        --border: #2e2e36;
+        --amber: #f59e0b;
+        --green: #10b981;
+        --red: #f87171;
+        --blue: #60a5fa;
+        --purple: #a78bfa;
+        --orange: #fb923c;
+        --t1: #f1f0ee;
+        --t2: #9a9a9e;
+        --t3: #5a5a62;
+        --fui:  "Google Sans", sans-serif;
+
+        --fcode: "JetBrains Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: var(--fui);
+        background: var(--bg);
+        color: var(--t1);
+        font-size: 14px;
+        line-height: 1.7;
+        display: flex;
+        min-height: 100vh;
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 99px;
+      }
+      a {
+        color: var(--blue);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      code {
+        font-family: var(--fcode);
+        font-size: 12px;
+        background: var(--bg-e);
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: var(--amber);
+      }
+
+      /* ── SIDEBAR ─────────────────────────── */
+      .sidebar {
+        width: 240px;
+        flex-shrink: 0;
+        background: var(--bg-s);
+        border-right: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 20px 0;
+      }
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 18px 18px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 14px;
+      }
+      .s-icon {
+        width: 28px;
+        height: 28px;
+        background: var(--amber);
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--fcode);
+        font-size: 12px;
+        font-weight: 700;
+        color: #0e0e10;
+      }
+      .s-brand {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .s-brand span {
+        color: var(--amber);
+      }
+      .s-version {
+        font-size: 10px;
+        color: var(--t3);
+        font-family: var(--fcode);
+      }
+
+      .nav-group {
+        margin-bottom: 4px;
+      }
+      .nav-group-title {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--t3);
+        padding: 8px 18px 4px;
+      }
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 18px;
+        font-size: 12px;
+        color: var(--t2);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+      }
+      .nav-link:hover {
+        color: var(--t1);
+        background: var(--bg-e);
+      }
+      .nav-link.active {
+        color: var(--amber);
+        background: rgba(245, 158, 11, 0.06);
+        border-right: 2px solid var(--amber);
+      }
+      .nav-method {
+        font-family: var(--fcode);
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 3px;
+        min-width: 34px;
+        text-align: center;
+      }
+      .m-get {
+        background: rgba(96, 165, 250, 0.15);
+        color: var(--blue);
+      }
+      .m-post {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--green);
+      }
+      .m-patch {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--amber);
+      }
+      .m-delete {
+        background: rgba(248, 113, 113, 0.15);
+        color: var(--red);
+      }
+
+      /* ── CONTENT ─────────────────────────── */
+      .content {
+        flex: 1;
+        min-width: 0;
+        padding: 40px clamp(20px, 4vw, 56px);
+        max-width: 880px;
+      }
+
+      /* ── SECTIONS ────────────────────────── */
+      .section {
+        margin-bottom: 56px;
+        scroll-margin-top: 24px;
+      }
+      .section-tag {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--amber);
+        margin-bottom: 8px;
+      }
+      .section-title {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+      }
+      .section-sub {
+        font-size: 14px;
+        color: var(--t2);
+        line-height: 1.7;
+        max-width: 660px;
+        margin-bottom: 24px;
+      }
+
+      /* ── ENDPOINT CARD ───────────────────── */
+      .endpoint {
+        margin-bottom: 28px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .ep-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        background: var(--bg-s);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+      }
+      .ep-header:hover {
+        background: var(--bg-e);
+      }
+      .method-badge {
+        font-family: var(--fcode);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 5px;
+        min-width: 54px;
+        text-align: center;
+      }
+      .ep-path {
+        font-family: var(--fcode);
+        font-size: 13px;
+        color: var(--t1);
+        font-weight: 600;
+      }
+      .ep-desc {
+        font-size: 12px;
+        color: var(--t2);
+        margin-left: auto;
+      }
+      .ep-auth {
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 99px;
+        border: 1px solid;
+        margin-left: 8px;
+        white-space: nowrap;
+      }
+      .auth-required {
+        border-color: rgba(248, 113, 113, 0.4);
+        color: var(--red);
+      }
+      .auth-optional {
+        border-color: rgba(245, 158, 11, 0.4);
+        color: var(--amber);
+      }
+      .auth-none {
+        border-color: rgba(16, 185, 129, 0.3);
+        color: var(--green);
+      }
+
+      .ep-body {
+        padding: 18px;
+        display: none;
+      }
+      .ep-body.open {
+        display: block;
+      }
+      .ep-chv {
+        font-size: 11px;
+        color: var(--t3);
+        transition: transform 0.2s;
+        flex-shrink: 0;
+      }
+      .ep-header.expanded .ep-chv {
+        transform: rotate(180deg);
+      }
+
+      /* ── TABLES ──────────────────────────── */
+      .param-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 18px;
+      }
+      .param-table th {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--t3);
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      .param-table td {
+        padding: 8px 10px;
+        font-size: 12px;
+        border-bottom: 1px solid var(--bg-e);
+        vertical-align: top;
+      }
+      .param-table tr:last-child td {
+        border-bottom: none;
+      }
+      .param-name {
+        font-family: var(--fcode);
+        color: var(--amber);
+      }
+      .param-type {
+        font-family: var(--fcode);
+        font-size: 10px;
+        color: var(--purple);
+      }
+      .param-req {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 99px;
+        background: rgba(248, 113, 113, 0.1);
+        color: var(--red);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+      }
+      .param-opt {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 99px;
+        background: var(--bg-e);
+        color: var(--t3);
+      }
+      .param-desc {
+        color: var(--t2);
+        line-height: 1.5;
+      }
+
+      /* ── CODE BLOCKS ─────────────────────── */
+      .code-block {
+        position: relative;
+        background: var(--bg-e);
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+      .code-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 7px 14px;
+        background: var(--bg-s);
+        border-bottom: 1px solid var(--border);
+        color: var(--t3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .code-copy {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 99px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--t2);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .code-copy:hover {
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .code-body {
+        padding: 14px;
+        font-family: var(--fcode);
+        font-size: 12px;
+        line-height: 1.7;
+        overflow-x: auto;
+        white-space: pre;
+      }
+      .str {
+        color: #a3e635;
+      }
+      .num {
+        color: #60a5fa;
+      }
+      .key {
+        color: #f59e0b;
+      }
+      .kw {
+        color: #c084fc;
+      }
+      .bool {
+        color: #f87171;
+      }
+      .comment {
+        color: #5a5a62;
+      }
+
+      /* ── LABELS ──────────────────────────── */
+      .sub-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--t1);
+        margin: 14px 0 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .sub-title::before {
+        content: "";
+        width: 3px;
+        height: 14px;
+        background: var(--amber);
+        border-radius: 2px;
+        display: block;
+      }
+
+      /* ── TIER TABLE ──────────────────────── */
+      .tier-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .tier-card {
+        background: var(--bg-s);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .tier-card.pro {
+        border-color: var(--amber);
+      }
+      .tier-name {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .tier-row {
+        font-size: 12px;
+        color: var(--t2);
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+      }
+      .tier-val {
+        font-family: var(--fcode);
+        color: var(--t1);
+      }
+
+      /* ── BADGES ──────────────────────────── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 99px;
+      }
+      .badge-green {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--green);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+      .badge-red {
+        background: rgba(248, 113, 113, 0.1);
+        color: var(--red);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+      }
+      .badge-amber {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--amber);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+      .badge-blue {
+        background: rgba(96, 165, 250, 0.1);
+        color: var(--blue);
+        border: 1px solid rgba(96, 165, 250, 0.2);
+      }
+
+      /* ── INFO BOXES ──────────────────────── */
+      .info-box {
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        line-height: 1.65;
+        margin: 10px 0;
+      }
+      .info-note {
+        background: rgba(96, 165, 250, 0.06);
+        border-left: 3px solid var(--blue);
+        color: var(--t2);
+      }
+      .info-warn {
+        background: rgba(245, 158, 11, 0.06);
+        border-left: 3px solid var(--amber);
+        color: var(--t2);
+      }
+      .info-danger {
+        background: rgba(248, 113, 113, 0.06);
+        border-left: 3px solid var(--red);
+        color: var(--t2);
+      }
+      .info-success {
+        background: rgba(16, 185, 129, 0.06);
+        border-left: 3px solid var(--green);
+        color: var(--t2);
+      }
+
+      /* ── STATUS CODES ────────────────────── */
+      .status-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+      }
+      .status-code {
+        font-family: var(--fcode);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 5px;
+      }
+      .s-2xx {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--green);
+      }
+      .s-4xx {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--amber);
+      }
+      .s-5xx {
+        background: rgba(248, 113, 113, 0.15);
+        color: var(--red);
+      }
+
+      /* ── DIVIDER ─────────────────────────── */
+      hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 40px 0;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          display: none;
+        }
+        .content {
+          padding: 24px 16px;
+        }
+        .tier-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <div class="s-icon">{}</div>
+        <div>
+          <div class="s-brand">Code<span>Dost</span> API</div>
+          <div class="s-version">v1.0.0 · REST</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Overview</div>
+        <a class="nav-link active" href="#overview">Introduction</a>
+        <a class="nav-link" href="#base-url">Base URL</a>
+        <a class="nav-link" href="#auth-overview">Authentication</a>
+        <a class="nav-link" href="#tiers">Tier Limits</a>
+        <a class="nav-link" href="#errors">Error Handling</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Authentication</div>
+        <a class="nav-link" href="#register"
+          ><span class="nav-method m-post">POST</span>/auth/register</a
+        >
+        <a class="nav-link" href="#login"
+          ><span class="nav-method m-post">POST</span>/auth/login</a
+        >
+        <a class="nav-link" href="#logout"
+          ><span class="nav-method m-post">POST</span>/auth/logout</a
+        >
+        <a class="nav-link" href="#refresh"
+          ><span class="nav-method m-post">POST</span>/auth/refresh</a
+        >
+        <a class="nav-link" href="#me"
+          ><span class="nav-method m-get">GET</span>/auth/me</a
+        >
+        <a class="nav-link" href="#update-profile"
+          ><span class="nav-method m-patch">PATCH</span>/auth/updateProfile</a
+        >
+        <a class="nav-link" href="#change-password"
+          ><span class="nav-method m-patch">PATCH</span>/auth/changePassword</a
+        >
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Analysis</div>
+        <a class="nav-link" href="#analyze"
+          ><span class="nav-method m-post">POST</span>/analyze</a
+        >
+        <a class="nav-link" href="#quota"
+          ><span class="nav-method m-get">GET</span>/analyze/quota</a
+        >
+        <a class="nav-link" href="#understood"
+          ><span class="nav-method m-patch">PATCH</span>/analyze/:id</a
+        >
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Subscription</div>
+        <a class="nav-link" href="#activate"
+          ><span class="nav-method m-post">POST</span>/subscription/activate</a
+        >
+        <a class="nav-link" href="#sub-status"
+          ><span class="nav-method m-get">GET</span>/subscription/status</a
+        >
+        <a class="nav-link" href="#sub-cancel"
+          ><span class="nav-method m-post">POST</span>/subscription/cancel</a
+        >
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">System</div>
+        <a class="nav-link" href="#health"
+          ><span class="nav-method m-get">GET</span>/health</a
+        >
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="content">
+      <!-- ── OVERVIEW ───────────────────────────────────────── -->
+      <section class="section" id="overview">
+        <div class="section-tag">Overview</div>
+        <h1 class="section-title">CodeDost API Documentation</h1>
+        <p class="section-sub">
+          Complete reference for the CodeDost backend REST API. Handles user
+          authentication, usage tracking across three tiers, and Pro
+          subscription management via Gumroad.
+        </p>
+
+        <div class="info-box info-note">
+          The AI analysis itself runs directly from the frontend to
+          Groq/Gemini/OpenRouter. This backend handles authentication, enforcing
+          usage limits, and logging — it does NOT proxy AI requests.
+        </div>
+      </section>
+
+      <!-- ── BASE URL ───────────────────────────────────────── -->
+      <section class="section" id="base-url">
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 12px">
+          Base URL
+        </h2>
+        <div class="code-block">
+          <div class="code-label">Production</div>
+          <div class="code-body">
+            <span class="str">https://codedost-backend.onrender.com</span>
+          </div>
+        </div>
+        <div class="code-block">
+          <div class="code-label">Local Development</div>
+          <div class="code-body">
+            <span class="str">http://localhost:5000</span>
+          </div>
+        </div>
+        <p style="font-size: 12px; color: var(--t2); margin-top: 8px">
+          All endpoints are prefixed with <code>/api</code>. Example:
+          <code>POST /api/auth/login</code>
+        </p>
+      </section>
+
+      <!-- ── AUTH OVERVIEW ─────────────────────────────────── -->
+      <section class="section" id="auth-overview">
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 12px">
+          Authentication
+        </h2>
+        <p style="font-size: 13px; color: var(--t2); margin-bottom: 14px">
+          CodeDost uses JWT (JSON Web Tokens) with a two-token system for
+          security.
+        </p>
+
+        <div class="sub-title">Access Token</div>
+        <p style="font-size: 12px; color: var(--t2); margin-bottom: 8px">
+          Short-lived (15 minutes). Send in every protected request.
+        </p>
+        <div class="code-block">
+          <div class="code-label">
+            Option A — Authorization Header (recommended for API clients)
+          </div>
+          <div class="code-body">Authorization: Bearer &lt;accessToken&gt;</div>
+        </div>
+        <div class="code-block">
+          <div class="code-label">
+            Option B — Cookie (automatic for browser apps)
+          </div>
+          <div class="code-body">
+            <span class="comment"
+              >// Set automatically on login. Sent automatically by browser. //
+              httpOnly = JS cannot read it. secure = HTTPS only.</span
+            >
+            Cookie: accessToken=&lt;token&gt;
+          </div>
+        </div>
+
+        <div class="sub-title" style="margin-top: 16px">Refresh Token</div>
+        <p style="font-size: 12px; color: var(--t2); margin-bottom: 8px">
+          Long-lived (7 days). Stored in an httpOnly cookie. Used only to get a
+          new access token when it expires. Never send this manually.
+        </p>
+
+        <div class="info-box info-warn" style="margin-top: 12px">
+          When the frontend receives a <code>401 TOKEN_EXPIRED</code> response,
+          call <code>POST /api/auth/refresh</code> to get a new access token
+          silently, then retry the original request.
+        </div>
+      </section>
+
+      <!-- ── TIER LIMITS ────────────────────────────────────── -->
+      <section class="section" id="tiers">
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 12px">
+          Tier Limits
+        </h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <div class="tier-name">👤 Guest</div>
+            <div class="tier-row">
+              <span>Analyses/month</span><span class="tier-val">5</span>
+            </div>
+            <div class="tier-row">
+              <span>Max lines/request</span><span class="tier-val">300</span>
+            </div>
+            <div class="tier-row">
+              <span>Login required</span><span class="tier-val">No</span>
+            </div>
+            <div class="tier-row">
+              <span>Tracked by</span><span class="tier-val">IP address</span>
+            </div>
+          </div>
+          <div class="tier-card">
+            <div class="tier-name">✉️ Free</div>
+            <div class="tier-row">
+              <span>Analyses/month</span><span class="tier-val">20</span>
+            </div>
+            <div class="tier-row">
+              <span>Max lines/request</span><span class="tier-val">1,000</span>
+            </div>
+            <div class="tier-row">
+              <span>Login required</span><span class="tier-val">Yes</span>
+            </div>
+            <div class="tier-row">
+              <span>Tracked by</span><span class="tier-val">User account</span>
+            </div>
+          </div>
+          <div class="tier-card pro">
+            <div class="tier-name">⚡ Pro — $0.99/mo</div>
+            <div class="tier-row">
+              <span>Analyses/month</span><span class="tier-val">Unlimited</span>
+            </div>
+            <div class="tier-row">
+              <span>Max lines/request</span
+              ><span class="tier-val">Unlimited</span>
+            </div>
+            <div class="tier-row">
+              <span>Login required</span><span class="tier-val">Yes</span>
+            </div>
+            <div class="tier-row">
+              <span>Activated via</span
+              ><span class="tier-val">Gumroad key</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box info-note">
+          Monthly usage resets automatically on the 1st of each calendar month.
+          Limits are enforced server-side — the frontend cannot bypass them.
+        </div>
+      </section>
+
+      <!-- ── ERROR FORMAT ───────────────────────────────────── -->
+      <section class="section" id="errors">
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 12px">
+          Error Handling
+        </h2>
+        <p style="font-size: 12px; color: var(--t2); margin-bottom: 14px">
+          All errors follow the same JSON format. Always check
+          <code>success: false</code> and read <code>error</code> for the
+          message.
+        </p>
+        <div class="code-block">
+          <div class="code-label">Error Response Format</div>
+          <div class="code-body">
+            { <span class="key">"success"</span>:
+            <span class="bool">false</span>, <span class="key">"error"</span>:
+            <span class="str">"Human-readable error message"</span>,
+            <span class="key">"code"</span>:
+            <span class="str">"MACHINE_READABLE_CODE"</span>,
+            <span class="comment">// optional</span>
+            <span class="key">"upgradeUrl"</span>:
+            <span class="str">"https://..."</span>,
+            <span class="comment">// only on limit errors</span>
+            <span class="key">"loginPrompt"</span>:
+            <span class="bool">true</span>
+            <span class="comment">// only for guest limits</span> }
+          </div>
+        </div>
+
+        <div class="sub-title">HTTP Status Codes</div>
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-code s-2xx">200</span
+            ><span style="color: var(--t2)">Success</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-2xx">201</span
+            ><span style="color: var(--t2)">Created</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-4xx">400</span
+            ><span style="color: var(--t2)">Bad request / validation</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-4xx">401</span
+            ><span style="color: var(--t2)">Not authenticated</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-4xx">403</span
+            ><span style="color: var(--t2)">Forbidden / line limit</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-4xx">409</span
+            ><span style="color: var(--t2)">Conflict (email exists)</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-4xx">429</span
+            ><span style="color: var(--t2)">Monthly limit reached</span>
+          </div>
+          <div class="status-item">
+            <span class="status-code s-5xx">500</span
+            ><span style="color: var(--t2)">Server error</span>
+          </div>
+        </div>
+
+        <div class="sub-title" style="margin-top: 14px">
+          Machine-Readable Codes
+        </div>
+        <table class="param-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Meaning</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="param-name">TOKEN_EXPIRED</td>
+              <td class="param-desc">Access token expired</td>
+              <td class="param-desc">
+                Call <code>/auth/refresh</code> then retry
+              </td>
+            </tr>
+            <tr>
+              <td class="param-name">LINE_LIMIT_EXCEEDED</td>
+              <td class="param-desc">Code too long for tier</td>
+              <td class="param-desc">Show upgrade prompt</td>
+            </tr>
+            <tr>
+              <td class="param-name">MONTHLY_LIMIT_REACHED</td>
+              <td class="param-desc">Free user hit 20/month</td>
+              <td class="param-desc">Show upgrade prompt</td>
+            </tr>
+            <tr>
+              <td class="param-name">GUEST_LIMIT_REACHED</td>
+              <td class="param-desc">Guest hit 5/month</td>
+              <td class="param-desc">Show login/register prompt</td>
+            </tr>
+            <tr>
+              <td class="param-name">PRO_REQUIRED</td>
+              <td class="param-desc">Feature needs Pro</td>
+              <td class="param-desc">Show Pro upgrade link</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr />
+
+      <!-- ══════════════════════════════════════════════════════
+       AUTH ENDPOINTS
+  ══════════════════════════════════════════════════════ -->
+      <section class="section" id="register">
+        <div class="section-tag">Authentication</div>
+        <h2 class="section-title">POST /api/auth/register</h2>
+        <p class="section-sub">
+          Create a new user account. Returns access token + sets httpOnly
+          cookies.
+        </p>
+
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/auth/register</span>
+            <span class="ep-auth auth-none">No auth required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="sub-title">Request Body</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">name</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">Full name. 2–50 characters.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">email</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">
+                    Valid email address. Must be unique.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">password</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">
+                    Minimum 8 characters. Hashed before storage.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">university</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td class="param-desc">University name for profile.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="code-block">
+              <div class="code-label">
+                Request Example
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <div class="code-body">
+                fetch(<span class="str">'/api/auth/register'</span>, { method:
+                <span class="str">'POST'</span>, headers: {
+                <span class="str">'Content-Type'</span>:
+                <span class="str">'application/json'</span> }, credentials:
+                <span class="str">'include'</span>,
+                <span class="comment">// Required for cookies</span> body:
+                JSON.stringify({ name: <span class="str">'Ahmed Khan'</span>,
+                email: <span class="str">'ahmed@example.com'</span>, password:
+                <span class="str">'mypassword123'</span>, university:
+                <span class="str">'FAST NUCES Lahore'</span> }) });
+              </div>
+            </div>
+
+            <div class="code-block">
+              <div class="code-label">Success Response — 201 Created</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"accessToken"</span>:
+                <span class="str">"eyJhbGciOiJIUzI1NiIs..."</span>,
+                <span class="key">"user"</span>: {
+                <span class="key">"id"</span>:
+                <span class="str">"64f3a2b1c9e7f8d0a1b2c3d4"</span>,
+                <span class="key">"name"</span>:
+                <span class="str">"Ahmed Khan"</span>,
+                <span class="key">"email"</span>:
+                <span class="str">"ahmed@example.com"</span>,
+                <span class="key">"tier"</span>:
+                <span class="str">"free"</span>,
+                <span class="key">"usage"</span>: {
+                <span class="key">"used"</span>: <span class="num">0</span>,
+                <span class="key">"limit"</span>: <span class="num">20</span>,
+                <span class="key">"remaining"</span>:
+                <span class="num">20</span>,
+                <span class="key">"maxLines"</span>:
+                <span class="num">1000</span>
+                },
+                <span class="key">"preferredMode"</span>:
+                <span class="str">"urdu"</span>,
+                <span class="key">"preferredLang"</span>:
+                <span class="str">"python"</span> } }
+              </div>
+            </div>
+            <div class="info-box info-note">
+              Cookies <code>accessToken</code> and <code>refreshToken</code> are
+              set automatically as httpOnly cookies. The browser will send them
+              automatically on every subsequent request.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="login">
+        <h2 class="section-title">POST /api/auth/login</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/auth/login</span>
+            <span class="ep-auth auth-none">No auth required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="sub-title">Request Body</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">email</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">Registered email address</td>
+                </tr>
+                <tr>
+                  <td class="param-name">password</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">Account password</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="code-block">
+              <div class="code-label">
+                Request Example
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <div class="code-body">
+                fetch(<span class="str">'/api/auth/login'</span>, { method:
+                <span class="str">'POST'</span>, headers: {
+                <span class="str">'Content-Type'</span>:
+                <span class="str">'application/json'</span> }, credentials:
+                <span class="str">'include'</span>, body: JSON.stringify({
+                email: <span class="str">'ahmed@example.com'</span>, password:
+                <span class="str">'mypassword123'</span> }) });
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"accessToken"</span>:
+                <span class="str">"eyJhbGciOiJIUzI1NiIs..."</span>,
+                <span class="key">"user"</span>: {
+                <span class="comment"
+                  >/* same shape as register response */</span
+                >
+                } }
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Error — Wrong credentials</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">false</span>,
+                <span class="key">"error"</span>:
+                <span class="str">"Incorrect email or password."</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="logout">
+        <h2 class="section-title">POST /api/auth/logout</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/auth/logout</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Logs out the current device. Removes the refresh token from the
+              database and clears both cookies. Other devices remain logged in.
+            </p>
+            <div class="code-block">
+              <div class="code-label">
+                Request Example
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <div class="code-body">
+                fetch(<span class="str">'/api/auth/logout'</span>, { method:
+                <span class="str">'POST'</span>, credentials:
+                <span class="str">'include'</span>
+                <span class="comment"
+                  >// No body needed — token comes from cookie</span
+                >
+                });
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"message"</span>:
+                <span class="str">"Logged out successfully."</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="refresh">
+        <h2 class="section-title">POST /api/auth/refresh</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/auth/refresh</span>
+            <span class="ep-auth auth-optional">Refresh Cookie</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Gets a new access token silently. Reads the refresh token from the
+              <code>refreshToken</code> cookie. Rotates the refresh token (old
+              one invalidated, new one issued).
+            </p>
+            <div class="info-box info-warn">
+              Call this automatically when any request returns
+              <code>401 TOKEN_EXPIRED</code>, then retry the original request
+              with the new token.
+            </div>
+            <div class="code-block">
+              <div class="code-label">
+                Auto-Refresh Pattern (add this to your frontend)
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <div class="code-body">
+                <span class="kw">async function</span>
+                <span class="str">apiFetch</span>(url, options = {}) {
+                options.credentials = <span class="str">'include'</span>;
+                <span class="kw">let</span> res =
+                <span class="kw">await</span> fetch(url, options);
+
+                <span class="comment"
+                  >// If token expired, refresh silently and retry once</span
+                >
+                <span class="kw">if</span> (res.status ===
+                <span class="num">401</span>) {
+                <span class="kw">const</span> data =
+                <span class="kw">await</span> res.json();
+                <span class="kw">if</span> (data.code ===
+                <span class="str">'TOKEN_EXPIRED'</span>) {
+                <span class="kw">const</span> refreshRes =
+                <span class="kw">await</span> fetch(<span class="str"
+                  >'/api/auth/refresh'</span
+                >, { method: <span class="str">'POST'</span>, credentials:
+                <span class="str">'include'</span>
+                });
+                <span class="kw">if</span> (refreshRes.ok) {
+                <span class="kw">const</span> { accessToken } =
+                <span class="kw">await</span> refreshRes.json(); options.headers
+                = { ...options.headers, Authorization:
+                <span class="str">`Bearer </span>${accessToken}<span class="str"
+                  >`</span
+                >
+                }; res = <span class="kw">await</span> fetch(url, options);
+                <span class="comment">// Retry</span>
+                } } }
+                <span class="kw">return</span> res; }
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"accessToken"</span>:
+                <span class="str">"eyJhbGciOiJIUzI1NiIs..."</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="me">
+        <h2 class="section-title">GET /api/auth/me</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-get">GET</span>
+            <span class="ep-path">/api/auth/me</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Returns the current user profile, tier, and remaining usage quota.
+              Call this on app load to restore the user session.
+            </p>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>, <span class="key">"user"</span>:
+                { <span class="key">"id"</span>:
+                <span class="str">"64f3a2b1c9e7f8d0a1b2c3d4"</span>,
+                <span class="key">"name"</span>:
+                <span class="str">"Ahmed Khan"</span>,
+                <span class="key">"email"</span>:
+                <span class="str">"ahmed@example.com"</span>,
+                <span class="key">"tier"</span>:
+                <span class="str">"free"</span>,
+                <span class="key">"usage"</span>: {
+                <span class="key">"used"</span>: <span class="num">7</span>,
+                <span class="key">"limit"</span>: <span class="num">20</span>,
+                <span class="key">"remaining"</span>:
+                <span class="num">13</span>,
+                <span class="key">"maxLines"</span>:
+                <span class="num">1000</span>
+                },
+                <span class="key">"subscription"</span>: {
+                <span class="key">"isActive"</span>:
+                <span class="bool">false</span>,
+                <span class="key">"startDate"</span>:
+                <span class="bool">null</span>,
+                <span class="key">"endDate"</span>:
+                <span class="bool">null</span>
+                },
+                <span class="key">"university"</span>:
+                <span class="str">"FAST NUCES Lahore"</span>,
+                <span class="key">"preferredMode"</span>:<span class="str"
+                  >"urdu"</span
+                >, <span class="key">"preferredLang"</span>:<span class="str"
+                  >"python"</span
+                >, <span class="key">"createdAt"</span>:
+                <span class="str">"2025-03-20T10:00:00.000Z"</span>,
+                <span class="key">"loginCount"</span>:
+                <span class="num">14</span> } }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="update-profile">
+        <h2 class="section-title">PATCH /api/auth/updateProfile</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-patch">PATCH</span>
+            <span class="ep-path">/api/auth/updateProfile</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="sub-title">Request Body (all fields optional)</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">name</td>
+                  <td class="param-type">String</td>
+                  <td class="param-desc">Display name</td>
+                </tr>
+                <tr>
+                  <td class="param-name">university</td>
+                  <td class="param-type">String</td>
+                  <td class="param-desc">University name</td>
+                </tr>
+                <tr>
+                  <td class="param-name">preferredMode</td>
+                  <td class="param-type">String</td>
+                  <td class="param-desc">
+                    <code>urdu</code> | <code>mixed</code> |
+                    <code>english</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">preferredLang</td>
+                  <td class="param-type">String</td>
+                  <td class="param-desc">
+                    <code>python</code> | <code>javascript</code> |
+                    <code>java</code> | <code>cpp</code> | <code>html</code> |
+                    <code>sql</code>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>, <span class="key">"user"</span>:
+                { <span class="comment">/* updated user object */</span> } }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="change-password">
+        <h2 class="section-title">PATCH /api/auth/changePassword</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-patch">PATCH</span>
+            <span class="ep-path">/api/auth/changePassword</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="info-box info-warn">
+              Changing the password invalidates all refresh tokens. The user
+              will be logged out on all devices and must log in again.
+            </div>
+            <div class="sub-title" style="margin-top: 12px">Request Body</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">currentPassword</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">Current password for verification</td>
+                </tr>
+                <tr>
+                  <td class="param-name">newPassword</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">
+                    New password. Minimum 8 characters.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"message"</span>:
+                <span class="str"
+                  >"Password changed. Please log in again."</span
+                >
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr />
+
+      <!-- ══════════════════════════════════════════════════════
+       ANALYSIS ENDPOINTS
+  ══════════════════════════════════════════════════════ -->
+      <section class="section" id="analyze">
+        <div class="section-tag">Analysis</div>
+        <h2 class="section-title">POST /api/analyze</h2>
+        <p class="section-sub">
+          Called before making an AI API call. Checks the user's quota, logs the
+          analysis, and increments usage counters. Works for guests, free, and
+          pro users.
+        </p>
+
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/analyze</span>
+            <span class="ep-auth auth-optional">Optional JWT</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="info-box info-note">
+              Call this endpoint BEFORE making the Groq/Gemini request. If it
+              returns success, proceed with the AI call. If it returns 429 or
+              403, show the appropriate message.
+            </div>
+
+            <div class="sub-title" style="margin-top: 12px">Request Body</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">code</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">
+                    The code being analyzed. Line count is checked against tier
+                    limit.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">language</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td class="param-desc">
+                    <code>python</code> | <code>javascript</code> |
+                    <code>java</code> | <code>cpp</code> | <code>html</code> |
+                    <code>sql</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">errorMessage</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td class="param-desc">
+                    The error message string. Stored for analytics.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">mode</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td class="param-desc">
+                    <code>urdu</code> | <code>mixed</code> |
+                    <code>english</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">aiProvider</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td class="param-desc">
+                    <code>groq</code> | <code>gemini</code> |
+                    <code>openrouter</code>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="code-block">
+              <div class="code-label">
+                Integration Pattern — use this in analyzeCode()
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <div class="code-body">
+                <span class="kw">async function</span> analyzeCode() {
+                <span class="kw">const</span> code =
+                document.getElementById(<span class="str">'code-input'</span
+                >).value.trim();
+
+                <span class="comment">// Step 1: Check quota with backend</span>
+                <span class="kw">const</span> quotaRes =
+                <span class="kw">await</span> fetch(<span class="str"
+                  >`${API_URL}/api/analyze`</span
+                >, { method: <span class="str">'POST'</span>, headers: {
+                <span class="str">'Content-Type'</span>:
+                <span class="str">'application/json'</span> }, credentials:
+                <span class="str">'include'</span>, body: JSON.stringify({ code,
+                language: currentLang, mode: currentMode }) });
+
+                <span class="kw">const</span> quotaData =
+                <span class="kw">await</span> quotaRes.json();
+
+                <span class="kw">if</span> (!quotaData.success) {
+                <span class="kw">if</span> (quotaData.code ===
+                <span class="str">'GUEST_LIMIT_REACHED'</span>) {
+                showLoginModal();
+                <span class="comment">// Prompt to register</span> }
+                <span class="kw">else if</span> (quotaData.code ===
+                <span class="str">'MONTHLY_LIMIT_REACHED'</span>) {
+                showUpgradeModal();
+                <span class="comment">// Prompt to upgrade to Pro</span> }
+                <span class="kw">else</span> { showToast(<span class="str"
+                  >'error'</span
+                >, quotaData.error); } <span class="kw">return</span>; }
+
+                <span class="comment"
+                  >// Step 2: Proceed with AI call
+                  (Groq/Gemini/OpenRouter)</span
+                >
+                <span class="comment">// ... existing AI fetch code ...</span>
+                }
+              </div>
+            </div>
+
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"message"</span>:
+                <span class="str"
+                  >"Analysis logged. Proceed with AI call on frontend."</span
+                >, <span class="key">"quota"</span>: {
+                <span class="key">"tier"</span>:
+                <span class="str">"free"</span>,
+                <span class="key">"remaining"</span>:
+                <span class="num">12</span>,
+                <span class="comment">// null for Pro (unlimited)</span>
+                <span class="key">"maxLines"</span>:
+                <span class="num">1000</span> } }
+              </div>
+            </div>
+
+            <div class="code-block">
+              <div class="code-label">Error — Monthly limit reached (429)</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">false</span>,
+                <span class="key">"error"</span>:
+                <span class="str"
+                  >"Monthly limit reached. Free accounts get 20 analyses per
+                  month."</span
+                >, <span class="key">"code"</span>:
+                <span class="str">"MONTHLY_LIMIT_REACHED"</span>,
+                <span class="key">"limit"</span>: <span class="num">20</span>,
+                <span class="key">"used"</span>: <span class="num">20</span>,
+                <span class="key">"resetsOn"</span>:
+                <span class="str">"2025-04-01T00:00:00.000Z"</span>,
+                <span class="key">"upgradeUrl"</span>:
+                <span class="str"
+                  >"https://sherazramzan.gumroad.com/l/cfevjo"</span
+                >
+                }
+              </div>
+            </div>
+
+            <div class="code-block">
+              <div class="code-label">Error — Code too long (403)</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">false</span>,
+                <span class="key">"error"</span>:
+                <span class="str"
+                  >"Code too long. Guest users support up to 300 lines."</span
+                >, <span class="key">"code"</span>:
+                <span class="str">"LINE_LIMIT_EXCEEDED"</span>,
+                <span class="key">"limit"</span>: <span class="num">300</span>,
+                <span class="key">"actual"</span>: <span class="num">450</span>,
+                <span class="key">"loginPrompt"</span>:
+                <span class="bool">true</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="quota">
+        <h2 class="section-title">GET /api/analyze/quota</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-get">GET</span>
+            <span class="ep-path">/api/analyze/quota</span>
+            <span class="ep-auth auth-optional">Optional JWT</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Check remaining quota without consuming it. Call on app load to
+              show the usage counter in the UI.
+            </p>
+            <div class="code-block">
+              <div class="code-label">Success Response — Free User</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>, <span class="key">"tier"</span>:
+                <span class="str">"free"</span>,
+                <span class="key">"remaining"</span>:
+                <span class="num">13</span>, <span class="key">"used"</span>:
+                <span class="num">7</span>, <span class="key">"limit"</span>:
+                <span class="num">20</span>,
+                <span class="key">"maxLines"</span>:
+                <span class="num">1000</span>,
+                <span class="key">"resetsOn"</span>:
+                <span class="str">"2025-04-01T00:00:00.000Z"</span> }
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Success Response — Pro User</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>, <span class="key">"tier"</span>:
+                <span class="str">"pro"</span>,
+                <span class="key">"remaining"</span>:
+                <span class="bool">null</span>,
+                <span class="comment">// null means unlimited</span>
+                <span class="key">"maxLines"</span>:
+                <span class="bool">null</span>
+                <span class="comment">// null means unlimited</span> }
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">
+                Success Response — Guest (not logged in)
+              </div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>, <span class="key">"tier"</span>:
+                <span class="str">"guest"</span>,
+                <span class="key">"remaining"</span>:
+                <span class="num">3</span>, <span class="key">"used"</span>:
+                <span class="num">2</span>, <span class="key">"limit"</span>:
+                <span class="num">5</span>, <span class="key">"maxLines"</span>:
+                <span class="num">300</span>,
+                <span class="key">"loginPrompt"</span>:
+                <span class="bool">true</span>
+                <span class="comment"
+                  >// show login nudge when remaining &lt;= 2</span
+                >
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="understood">
+        <h2 class="section-title">PATCH /api/analyze/:id/understood</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-patch">PATCH</span>
+            <span class="ep-path">/api/analyze/:id/understood</span>
+            <span class="ep-auth auth-optional">Optional JWT</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Records whether the user understood the explanation. Used for
+              analytics. The analysis ID is returned from
+              <code>POST /api/analyze</code>.
+            </p>
+            <div class="sub-title">Request Body</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">understood</td>
+                  <td class="param-type">Boolean</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">
+                    <code>true</code> = thumbs up. <code>false</code> = thumbs
+                    down.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr />
+
+      <!-- ══════════════════════════════════════════════════════
+       SUBSCRIPTION ENDPOINTS
+  ══════════════════════════════════════════════════════ -->
+      <section class="section" id="activate">
+        <div class="section-tag">Subscription</div>
+        <h2 class="section-title">POST /api/subscription/activate</h2>
+        <p class="section-sub">
+          Activates Pro tier by verifying a Gumroad license key. After
+          purchasing at <code>gumroad.com/l/cfevjo</code>, the user receives a
+          license key by email and enters it here.
+        </p>
+
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/subscription/activate</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="sub-title">Request Body</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">licenseKey</td>
+                  <td class="param-type">String</td>
+                  <td><span class="param-req">required</span></td>
+                  <td class="param-desc">
+                    Gumroad license key from the purchase confirmation email.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="code-block">
+              <div class="code-label">
+                Request Example
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <div class="code-body">
+                fetch(<span class="str">'/api/subscription/activate'</span>, {
+                method: <span class="str">'POST'</span>, headers: {
+                <span class="str">'Content-Type'</span>:
+                <span class="str">'application/json'</span> }, credentials:
+                <span class="str">'include'</span>, body: JSON.stringify({
+                licenseKey: <span class="str">'XXXX-XXXX-XXXX-XXXX'</span> })
+                });
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"message"</span>:
+                <span class="str"
+                  >"Pro subscription activated! Enjoy unlimited access."</span
+                >, <span class="key">"user"</span>: {
+                <span class="key">"tier"</span>: <span class="str">"pro"</span>,
+                <span class="key">"subscription"</span>: {
+                <span class="key">"isActive"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"startDate"</span>:
+                <span class="str">"2025-03-20T10:00:00.000Z"</span>,
+                <span class="key">"endDate"</span>:
+                <span class="bool">null</span>, <span class="key">"plan"</span>:
+                <span class="str">"lifetime"</span> } } }
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">Error — Invalid key</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">false</span>,
+                <span class="key">"error"</span>:
+                <span class="str"
+                  >"Invalid license key. Please check your Gumroad purchase
+                  email."</span
+                >
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="sub-status">
+        <h2 class="section-title">GET /api/subscription/status</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-get">GET</span>
+            <span class="ep-path">/api/subscription/status</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>, <span class="key">"tier"</span>:
+                <span class="str">"pro"</span>,
+                <span class="key">"subscription"</span>:{
+                <span class="comment">/* subscription object */</span> },
+                <span class="key">"remaining"</span>:
+                <span class="bool">null</span>,
+                <span class="key">"maxLines"</span>:
+                <span class="bool">null</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="sub-cancel">
+        <h2 class="section-title">POST /api/subscription/cancel</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-post">POST</span>
+            <span class="ep-path">/api/subscription/cancel</span>
+            <span class="ep-auth auth-required">JWT Required</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Downgrades the user from Pro to free tier. No request body needed.
+            </p>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"message"</span>:
+                <span class="str"
+                  >"Subscription cancelled. You have been moved to the free
+                  tier."</span
+                >
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr />
+
+      <!-- ── HEALTH ───────────────────────────────────────────── -->
+      <section class="section" id="health">
+        <div class="section-tag">System</div>
+        <h2 class="section-title">GET /api/health</h2>
+        <div class="endpoint">
+          <div class="ep-header expanded" onclick="toggle(this)">
+            <span class="method-badge m-get">GET</span>
+            <span class="ep-path">/api/health</span>
+            <span class="ep-auth auth-none">No auth</span>
+            <span class="ep-chv">▾</span>
+          </div>
+          <div class="ep-body open">
+            <p style="font-size: 12px; color: var(--t2); margin-bottom: 12px">
+              Check if the server is running. Use this to verify deployment is
+              successful.
+            </p>
+            <div class="code-block">
+              <div class="code-label">Success Response — 200</div>
+              <div class="code-body">
+                { <span class="key">"success"</span>:
+                <span class="bool">true</span>,
+                <span class="key">"status"</span>:
+                <span class="str">"CodeDost API is running"</span>,
+                <span class="key">"timestamp"</span>:
+                <span class="str">"2025-03-20T10:00:00.000Z"</span>,
+                <span class="key">"environment"</span>:
+                <span class="str">"production"</span> }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div
+        style="
+          padding: 40px 0 20px;
+          text-align: center;
+          color: var(--t3);
+          font-size: 11px;
+        "
+      >
+        CodeDost API v1.0.0 · code-dost.vercel.app ·
+        github.com/sheraz91-ops/CodeDost
+      </div>
+    </main>
+
+    <script>
+      function toggle(header) {
+        header.classList.toggle("expanded");
+        header.nextElementSibling.classList.toggle("open");
+      }
+      function copyCode(btn) {
+        const code = btn.closest(".code-block").querySelector(".code-body");
+        const text = code.innerText || code.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const orig = btn.textContent;
+          btn.textContent = "Copied ✓";
+          setTimeout(() => (btn.textContent = orig), 2000);
+        });
+      }
+      // Highlight active sidebar link on scroll
+      const sections = document.querySelectorAll(".section");
+      const navLinks = document.querySelectorAll(".nav-link");
+      window.addEventListener(
+        "scroll",
+        () => {
+          let current = "";
+          sections.forEach((s) => {
+            if (window.scrollY >= s.offsetTop - 60) current = s.id;
+          });
+          navLinks.forEach((l) => {
+            l.classList.toggle(
+              "active",
+              l.getAttribute("href") === "#" + current,
+            );
+          });
+        },
+        { passive: true },
+      );
+    </script>
+  </body>
+</html>
