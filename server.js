@@ -1,10 +1,10 @@
 require('dotenv').config();
-const express    = require('express');
-const cors       = require('cors');
-const helmet     = require('helmet');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-const rateLimit  = require('express-rate-limit');
-const connectDB  = require('./config/db');
+const rateLimit = require('express-rate-limit');
+const connectDB = require('./config/db');
 
 // ── CONNECT TO MONGODB ────────────────────────────────────────
 connectDB();
@@ -15,7 +15,6 @@ const app = express();
 app.use(helmet());
 
 // ── CORS ──────────────────────────────────────────────────────
-// ONLY your frontend can talk to this backend
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.ALLOWED_ORIGIN,
@@ -24,30 +23,33 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
 ].filter(Boolean);
 
-app.options('*', cors());
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (Postman, mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS: Origin ${origin} not allowed`));
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, origin); // ✅ exact origin (NO *)
+    }
+
+    return callback(new Error(`CORS: Origin ${origin} not allowed`));
   },
-  credentials: true,    // Allow cookies to be sent cross-origin
+  credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // ✅ FIXED (no wildcard issue)
 
 // ── BODY PARSERS ──────────────────────────────────────────────
-app.use(express.json({ limit: '50kb' }));    // Max 50kb request body
+app.use(express.json({ limit: '50kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // ── TRUST PROXY ───────────────────────────────────────────────
-// Required for correct IP detection behind Render/Railway/Heroku
 app.set('trust proxy', 1);
 
 // ── GLOBAL RATE LIMITER ───────────────────────────────────────
-// Max 100 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -61,7 +63,6 @@ const globalLimiter = rateLimit({
 app.use('/api', globalLimiter);
 
 // ── AUTH RATE LIMITER ─────────────────────────────────────────
-// Stricter: Max 10 login/register attempts per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -72,8 +73,8 @@ const authLimiter = rateLimit({
 });
 
 // ── ROUTES ────────────────────────────────────────────────────
-app.use('/api/auth',         authLimiter, require('./routes/auth'));
-app.use('/api/analyze',      require('./routes/analyze'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/analyze', require('./routes/analyze'));
 app.use('/api/subscription', require('./routes/subscription'));
 
 // ── HEALTH CHECK ──────────────────────────────────────────────
@@ -113,14 +114,19 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500).json({
     success: false,
-    error: process.env.NODE_ENV === 'production'
-      ? 'Server error. Please try again.'
-      : err.message,
+    error:
+      process.env.NODE_ENV === 'production'
+        ? 'Server error. Please try again.'
+        : err.message,
   });
 });
 
 // ── START SERVER ──────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`CodeDost API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+  console.log(
+    `CodeDost API running on port ${PORT} [${
+      process.env.NODE_ENV || 'development'
+    }]`
+  );
 });
