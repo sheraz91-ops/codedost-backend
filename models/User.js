@@ -111,7 +111,6 @@ const userSchema = new mongoose.Schema({
 
 
 // ─── INDEXES ─────────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
 userSchema.index({ 'subscription.plan': 1 });
 userSchema.index({ createdAt: -1 });
 
