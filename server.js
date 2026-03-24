@@ -17,11 +17,14 @@ app.use(helmet());
 // ── CORS ──────────────────────────────────────────────────────
 // ONLY your frontend can talk to this backend
 const allowedOrigins = [
-  process.env.ALLOWED_ORIGIN,        // e.g. https://code-dost.vercel.app
-  'http://localhost:3000',            // Local development
-  'http://127.0.0.1:5500',           // VS Code Live Server
-];
+  process.env.FRONTEND_URL,
+  process.env.ALLOWED_ORIGIN,
+  'https://code-dost.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:5500',
+].filter(Boolean);
 
+app.options('*', cors());
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (Postman, mobile apps)
