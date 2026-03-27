@@ -20,6 +20,8 @@ const allowedOrigins = [
   process.env.ALLOWED_ORIGIN,
   'https://code-dost.vercel.app',
   'http://localhost:3000',
+  'http://localhost:5500',
+  'http://127.0.0.1:3000',
   'http://127.0.0.1:5500',
 ].filter(Boolean);
 
@@ -76,6 +78,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/analyze', require('./routes/analyze'));
 app.use('/api/subscription', require('./routes/subscription'));
+app.use('/api/counter', require('./routes/counter'));
 
 // ── HEALTH CHECK ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
