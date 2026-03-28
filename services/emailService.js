@@ -6,12 +6,10 @@ const getTransporter = async () => {
   if (transporter) return transporter;
 
   transporter = nodemailer.createTransport({
-    host: 'smtp.resend.com',
-    port: 465,
-    secure: true,
+    service: 'gmail',   // ✅ host/port ki jagah service use karo
     auth: {
-      user: 'resend',
-      pass: process.env.RESEND_API_KEY,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 

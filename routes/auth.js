@@ -94,7 +94,7 @@ router.post('/register', validateRegister, async (req, res) => {
       const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
 
       await transporter.sendMail({
-     from: 'CodeDost <onboarding@resend.dev>',
+     from: `CodeDost <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: '🔐 Verify Your Email',
         html: `
@@ -211,35 +211,55 @@ router.get('/verify-email', async (req, res) => {
 
     // ─── SEND WELCOME EMAIL TO USER ───────────────────────────────────
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
-    try {
-      const transporter = await getTransporter();
-      await transporter.sendMail({
-        from: 'CodeDost <onboarding@resend.dev>',
-        to: user.email,  // ✅ CHANGED: Email goes to user, not you
-        subject: '✅ CodeDost - Welcome!',
-        html: `
-          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
-            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
-              <h2 style="color: #10b981; text-align: center;">✅ Welcome to CodeDost!</h2>
-              <p style="color: #374151;">Salam ${user.name}!</p>
-              <p style="color: #374151;">Tumhara email successfully verify ho gaya. Ab tum CodeDost use kar sakte ho!</p>
-              <p style="color: #374151; margin: 20px 0;">Ab tum login karke code analyze kar sakte ho:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html" style="background: #3b82f6; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to CodeDost</a>
-              </div>
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                Happy coding! 🇵🇰
-              </p>
-            </div>
-          </div>
-        `
-      });
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't fail the verification, just log the error
-    }
+  // ✅ YEHE PASTE KARO
+    // ─── TOKENS ───
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
+    user.refreshToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    await user.save({ validateBeforeSave: false });
+
+    // ✅ PEHLE cookies aur response
+    setCookies(res, accessToken, refreshToken);
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created. Please verify your email.',
+      user: user.toPublicJSON(),
+    });
+
+    // ✅ BAAD MEIN email — fire and forget, Railway timeout nahi hoga
+    const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
+    getTransporter().then(t => t.sendMail({
+      from: `CodeDost <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: '🔐 Verify Your Email',
+      html: `
+           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0;">✉️ Verify Your Email</h1>
+        </div>
+        <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #333;">Welcome, ${user.name}!</h2>
+          <p style="color: #666; line-height: 1.8;">Thank you for signing up to <strong>CodeDost</strong>!</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block;">
+              Verify Email Address
+            </a>
+          </div>
+          <p style="background-color: #f5f7fa; padding: 15px; border-radius: 5px; color: #555; word-break: break-all; font-size: 12px;">${verificationLink}</p>
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+            <p style="color: #856404; margin: 0;"><strong>⏱️ Important:</strong> This link expires in <strong>24 hours</strong>.</p>
+          </div>
+        </div>
+      </div>
+      `,
+    })).catch(err => console.error('❌ Email failed:', err.message));
+// ✅ YAHAN TAK
     res.json({
       success: true,
       message: 'Email verified successfully! You can now log in.',
@@ -491,7 +511,7 @@ router.post('/forgot-password', async (req, res) => {
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?reset_token=${resetToken}`;
       
       await transporter.sendMail({
-        from: 'CodeDost <onboarding@resend.dev>',
+        from: `CodeDost <${process.env.EMAIL_USER}>`,
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
         subject: '🔑 CodeDost - Password Reset',
         html: `
@@ -594,7 +614,7 @@ router.post('/reset-password', async (req, res) => {
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
       await transporter.sendMail({
-        from: 'CodeDost <onboarding@resend.dev>',
+        from: `CodeDost <${process.env.EMAIL_USER}>`,
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
         subject: '✅ CodeDost - Password Changed',
         html: `
