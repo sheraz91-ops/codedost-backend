@@ -8,15 +8,6 @@ const { getTransporter } = require('../services/emailService');
 
 const router = express.Router();
 
-// ─── EMAIL TRANSPORTER SETUP ──────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,        
-  port: process.env.SMTP_PORT,        
-  auth: {
-    user: process.env.SMTP_USER,      
-    pass: process.env.SMTP_PASS,      
-  },
-});
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 // Generate access token (short-lived: 15 min)
