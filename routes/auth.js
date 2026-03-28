@@ -10,43 +10,37 @@ const router = express.Router();
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-// Generate access token (short-lived: 15 min)
 const generateAccessToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
   });
 };
 
-// Generate refresh token (long-lived: 7 days)
 const generateRefreshToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d',
   });
 };
 
-// Set cookies on response
 const setCookies = (res, accessToken, refreshToken) => {
   const isProd = process.env.NODE_ENV === 'production';
 
-  // Access token cookie — short-lived, httpOnly
   res.cookie('accessToken', accessToken, {
-    httpOnly: true,           // JS cannot read this cookie — prevents XSS
-    secure: isProd,           // HTTPS only in production
-    sameSite: isProd ? 'none' : 'lax', // 'none' needed for cross-origin in prod
-    maxAge: 15 * 60 * 1000,  // 15 minutes in ms
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 15 * 60 * 1000,
   });
 
-  // Refresh token cookie — long-lived, httpOnly
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-    path: '/api/auth/refresh', // only sent to refresh endpoint
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/api/auth/refresh',
   });
 };
 
-// Clear cookies on logout
 const clearCookies = (res) => {
   const isProd = process.env.NODE_ENV === 'production';
   res.clearCookie('accessToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
@@ -79,87 +73,59 @@ router.post('/register', validateRegister, async (req, res) => {
       university: university || undefined,
     });
 
-    // ─── GENERATE VERIFICATION TOKEN ───
+    // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
     user.emailVerificationToken = verificationToken;
-    user.emailVerificationExpires = tokenExpiry;
-    await user.save({ validateBeforeSave: false });
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // ─── SEND EMAIL ───
-    try {
-      const transporter = await getTransporter();
-
-      const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
-
-      await transporter.sendMail({
-     from: `CodeDost <${process.env.EMAIL_USER}>`,
-     
-     
-        to: user.email,
-        subject: '🔐 Verify Your Email',
-        html: `
-           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0;">✉️ Verify Your Email</h1>
-        </div>
-        
-        <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px;">
-          <h2 style="color: #333;">Welcome, ${name}!</h2>
-          
-          <p style="color: #666; line-height: 1.8;">Thank you for signing up to <strong>CodeDost</strong>! We're excited to have you on board.</p>
-          
-          <p style="color: #666; line-height: 1.8;">To get started, please verify your email address by clicking the button below:</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block;">
-              Verify Email Address
-            </a>
-          </div>
-          
-          <p style="color: #999; font-size: 14px; text-align: center;">Or copy and paste this link:</p>
-          <p style="background-color: #f5f7fa; padding: 15px; border-radius: 5px; color: #555; word-break: break-all; font-size: 12px;">${verificationLink}</p>
-          
-          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <p style="color: #856404; margin: 0;"><strong>⏱️ Important:</strong> This link expires in <strong>24 hours</strong>.</p>
-          </div>
-          
-          <p style="color: #999; font-size: 13px; margin-top: 30px;">If you didn't create this account, please ignore this email.</p>
-        </div>
-        
-        <div style="background-color: #f5f7fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
-          <p style="color: #999; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CodeDost. All rights reserved.</p>
-        </div>
-      </div>
-        `,
-      });
-
-      console.log("✅ Email sent to:", user.email);
-
-    } catch (emailError) {
-      console.error('❌ Email failed:', emailError.message);
-    }
-
-    // ─── TOKENS ───
+    // Generate auth tokens
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
-
-    user.refreshToken = crypto
-      .createHash('sha256')
-      .update(refreshToken)
-      .digest('hex');
+    user.refreshToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
     await user.save({ validateBeforeSave: false });
 
-    // Cookies
+    // ✅ PEHLE cookies aur response bhejo — Railway timeout nahi hoga
     setCookies(res, accessToken, refreshToken);
-
     res.status(201).json({
       success: true,
       message: 'Account created. Please verify your email.',
       user: user.toPublicJSON(),
     });
+
+    // ✅ BAAD MEIN email bhejo — non-blocking fire and forget
+    const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
+    getTransporter().then(t => t.sendMail({
+      from: 'CodeDost <areebnadir3@gmail.com>',
+      to: user.email,
+      subject: '🔐 Verify Your Email',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">✉️ Verify Your Email</h1>
+          </div>
+          <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333;">Welcome, ${name}!</h2>
+            <p style="color: #666; line-height: 1.8;">Thank you for signing up to <strong>CodeDost</strong>! We're excited to have you on board.</p>
+            <p style="color: #666; line-height: 1.8;">To get started, please verify your email address by clicking the button below:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block;">
+                Verify Email Address
+              </a>
+            </div>
+            <p style="color: #999; font-size: 14px; text-align: center;">Or copy and paste this link:</p>
+            <p style="background-color: #f5f7fa; padding: 15px; border-radius: 5px; color: #555; word-break: break-all; font-size: 12px;">${verificationLink}</p>
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #856404; margin: 0;"><strong>⏱️ Important:</strong> This link expires in <strong>24 hours</strong>.</p>
+            </div>
+            <p style="color: #999; font-size: 13px; margin-top: 30px;">If you didn't create this account, please ignore this email.</p>
+          </div>
+          <div style="background-color: #f5f7fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <p style="color: #999; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CodeDost. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    })).catch(err => console.error('❌ Email failed:', err.message));
 
   } catch (error) {
     console.error('Register error:', error);
@@ -177,13 +143,14 @@ router.post('/register', validateRegister, async (req, res) => {
     });
   }
 });
+
+
 // ─── VERIFY EMAIL ─────────────────────────────────────────────────────────────
 // GET /api/auth/verify-email?token=xxx
 router.get('/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
-    console.log(token)
-    
+
     if (!token) {
       return res.status(400).json({
         success: false,
@@ -191,13 +158,11 @@ router.get('/verify-email', async (req, res) => {
       });
     }
 
-    // Find user by verification token
     const user = await User.findOne({
       emailVerificationToken: token,
-      emailVerificationExpires: { $gt: Date.now() }, // Token not expired
+      emailVerificationExpires: { $gt: Date.now() },
     });
-    console.log(user)
-    
+
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -211,62 +176,33 @@ router.get('/verify-email', async (req, res) => {
     user.emailVerificationExpires = null;
     await user.save({ validateBeforeSave: false });
 
-    // ─── SEND WELCOME EMAIL TO USER ───────────────────────────────────
-    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
-  // ✅ YEHE PASTE KARO
-    // ─── TOKENS ───
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-
-    user.refreshToken = crypto
-      .createHash('sha256')
-      .update(refreshToken)
-      .digest('hex');
-
-    await user.save({ validateBeforeSave: false });
-
-    // ✅ PEHLE cookies aur response
-    setCookies(res, accessToken, refreshToken);
-
-    res.status(201).json({
-      success: true,
-      message: 'Account created. Please verify your email.',
-      user: user.toPublicJSON(),
-    });
-
-    // ✅ BAAD MEIN email — fire and forget, Railway timeout nahi hoga
-    const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
-    getTransporter().then(t => t.sendMail({
-      from: `CodeDost <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: '🔐 Verify Your Email',
-      html: `
-           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0;">✉️ Verify Your Email</h1>
-        </div>
-        <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px;">
-          <h2 style="color: #333;">Welcome, ${user.name}!</h2>
-          <p style="color: #666; line-height: 1.8;">Thank you for signing up to <strong>CodeDost</strong>!</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block;">
-              Verify Email Address
-            </a>
-          </div>
-          <p style="background-color: #f5f7fa; padding: 15px; border-radius: 5px; color: #555; word-break: break-all; font-size: 12px;">${verificationLink}</p>
-          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
-            <p style="color: #856404; margin: 0;"><strong>⏱️ Important:</strong> This link expires in <strong>24 hours</strong>.</p>
-          </div>
-        </div>
-      </div>
-      `,
-    })).catch(err => console.error('❌ Email failed:', err.message));
-// ✅ YAHAN TAK
+    // ✅ PEHLE response bhejo
     res.json({
       success: true,
       message: 'Email verified successfully! You can now log in.',
       user: user.toPublicJSON(),
     });
+
+    // ✅ BAAD MEIN welcome email — non-blocking
+    getTransporter().then(t => t.sendMail({
+      from: 'CodeDost <areebnadir3@gmail.com>',
+      to: user.email,
+      subject: '✅ CodeDost - Welcome!',
+      html: `
+        <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+          <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #10b981; text-align: center;">✅ Welcome to CodeDost!</h2>
+            <p style="color: #374151;">Salam ${user.name}!</p>
+            <p style="color: #374151;">Tumhara email successfully verify ho gaya. Ab tum CodeDost use kar sakte ho!</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL}/codedost.html" style="background: #3b82f6; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to CodeDost</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">Happy coding! 🇵🇰</p>
+          </div>
+        </div>
+      `,
+    })).catch(err => console.error('❌ Welcome email failed:', err.message));
 
   } catch (error) {
     console.error('Verify email error:', error);
@@ -281,11 +217,9 @@ router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user — explicitly include password (it's excluded by default)
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      // Generic message — don't reveal if email exists
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.',
@@ -299,7 +233,6 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
 
-    // Compare password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({
@@ -308,15 +241,12 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
 
-    // Generate tokens
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // Store hashed refresh token
     user.refreshToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
     await user.save({ validateBeforeSave: false });
 
-    // Set cookies
     setCookies(res, accessToken, refreshToken);
 
     res.json({
@@ -336,19 +266,16 @@ router.post('/login', validateLogin, async (req, res) => {
 // POST /api/auth/logout
 router.post('/logout', protect, async (req, res) => {
   try {
-    // Invalidate refresh token in DB
     await User.findByIdAndUpdate(req.user._id, {
       $unset: { refreshToken: 1 }
     });
 
-    // Clear cookies
     clearCookies(res);
 
     res.json({ success: true, message: 'Logged out successfully.' });
 
   } catch (error) {
     console.error('Logout error:', error);
-    // Still clear cookies even on error
     clearCookies(res);
     res.json({ success: true, message: 'Logged out.' });
   }
@@ -359,7 +286,6 @@ router.post('/logout', protect, async (req, res) => {
 // POST /api/auth/refresh
 router.post('/refresh', async (req, res) => {
   try {
-    // Read refresh token from cookie
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
@@ -370,7 +296,6 @@ router.post('/refresh', async (req, res) => {
       });
     }
 
-    // Verify refresh token
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -383,7 +308,6 @@ router.post('/refresh', async (req, res) => {
       });
     }
 
-    // Find user and compare stored hash
     const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
     const user = await User.findOne({
       _id: decoded.id,
@@ -399,7 +323,6 @@ router.post('/refresh', async (req, res) => {
       });
     }
 
-    // Issue new access token (rotate refresh token too for security)
     const newAccessToken = generateAccessToken(user._id);
     const newRefreshToken = generateRefreshToken(user._id);
 
@@ -426,7 +349,6 @@ router.post('/refresh', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', protect, async (req, res) => {
   try {
-    // Re-fetch to get latest data
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
@@ -463,7 +385,7 @@ router.patch('/change-password', protect, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
     }
 
-    user.password = newPassword; // will be hashed by pre-save hook
+    user.password = newPassword;
     await user.save();
 
     res.json({ success: true, message: 'Password changed successfully.' });
@@ -487,76 +409,57 @@ router.post('/forgot-password', async (req, res) => {
       });
     }
 
-    // Find user by email
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      // Don't reveal if email exists (security)
       return res.status(200).json({
         success: true,
         message: 'If an account exists with that email, a password reset link has been sent.',
       });
     }
 
-    // ─── GENERATE RESET TOKEN ─────────────────────────────────────────
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
-
     user.passwordResetToken = resetToken;
-    user.passwordResetExpires = tokenExpiry;
+    user.passwordResetExpires = new Date(Date.now() + 1 * 60 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
 
-    // ─── SEND RESET EMAIL TO USER ─────────────────────────────────────
-    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
-    try {
-      const transporter = await getTransporter();
-      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?reset_token=${resetToken}`;
-      
-      await transporter.sendMail({
-        from: `CodeDost <${process.env.EMAIL_USER}>`,
-        to: user.email,  // ✅ CHANGED: Email goes to user, not you
-        subject: '🔑 CodeDost - Password Reset',
-        html: `
-          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
-            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
-              <h2 style="color: #1f2937; text-align: center;">🔑 Password Reset</h2>
-              <p style="color: #374151;">Salam ${user.name}!</p>
-              <p style="color: #374151;">Tumhare CodeDost account ke liye password reset request aayi hai.</p>
-              <p style="color: #374151; margin: 20px 0;">Password reset karne ke liye neeche click karo:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetLink}" style="background: #10b981; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
-              </div>
-              <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
-                Ya ye link copy karo:<br>
-                <code style="background: #f3f4f6; padding: 5px 10px;">${resetLink}</code>
-              </p>
-              <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
-                Link 1 hour ke liye valid hai.
-              </p>
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                Agar tumne ye request nahi ki, toh is email ko ignore karo.
-              </p>
-            </div>
-          </div>
-        `
-      });
-    } catch (emailError) {
-      // If email fails, clear the reset token
-      user.passwordResetToken = null;
-      user.passwordResetExpires = null;
-      await user.save({ validateBeforeSave: false });
-
-      console.error('Failed to send password reset email:', emailError);
-      return res.status(500).json({
-        success: false,
-        message: 'Could not send reset email. Please try again later.',
-      });
-    }
-
+    // ✅ PEHLE response bhejo
     res.json({
       success: true,
       message: 'Password reset link has been sent to your email.',
+    });
+
+    // ✅ BAAD MEIN email — non-blocking
+    const resetLink = `${process.env.FRONTEND_URL}/codedost.html?reset_token=${resetToken}`;
+    getTransporter().then(t => t.sendMail({
+      from: 'CodeDost <areebnadir3@gmail.com>',
+      to: user.email,
+      subject: '🔑 CodeDost - Password Reset',
+      html: `
+        <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+          <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #1f2937; text-align: center;">🔑 Password Reset</h2>
+            <p style="color: #374151;">Salam ${user.name}!</p>
+            <p style="color: #374151;">Tumhare CodeDost account ke liye password reset request aayi hai.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="background: #10b981; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+            </div>
+            <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
+              Ya ye link copy karo:<br>
+              <code style="background: #f3f4f6; padding: 5px 10px;">${resetLink}</code>
+            </p>
+            <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">Link 1 hour ke liye valid hai.</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">Agar tumne ye request nahi ki, toh is email ko ignore karo.</p>
+          </div>
+        </div>
+      `,
+    })).catch(async (err) => {
+      console.error('❌ Reset email failed:', err.message);
+      // Token clear karo agar email fail ho
+      user.passwordResetToken = null;
+      user.passwordResetExpires = null;
+      await user.save({ validateBeforeSave: false });
     });
 
   } catch (error) {
@@ -593,10 +496,9 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
-    // Find user by reset token
     const user = await User.findOne({
       passwordResetToken: token,
-      passwordResetExpires: { $gt: Date.now() }, // Token not expired
+      passwordResetExpires: { $gt: Date.now() },
     });
 
     if (!user) {
@@ -606,46 +508,38 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
-    // Update password
-    user.password = newPassword; // Will be hashed by pre-save hook
+    user.password = newPassword;
     user.passwordResetToken = null;
     user.passwordResetExpires = null;
     await user.save();
 
-    // ─── SEND CONFIRMATION EMAIL TO USER ──────────────────────────────
-    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
-    try {
-      await transporter.sendMail({
-        from: `CodeDost <${process.env.EMAIL_USER}>`,
-        to: user.email,  // ✅ CHANGED: Email goes to user, not you
-        subject: '✅ CodeDost - Password Changed',
-        html: `
-          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
-            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
-              <h2 style="color: #10b981; text-align: center;">✅ Password Updated</h2>
-              <p style="color: #374151;">Salam ${user.name}!</p>
-              <p style="color: #374151;">Tumhara CodeDost password successfully change ho gaya!</p>
-              <p style="color: #374151; margin: 20px 0;">Ab tum apna naya password use karke login kar sakte ho:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html" style="background: #3b82f6; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to CodeDost</a>
-              </div>
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                Agar ye tumne nahi kiya, toh turant support contact karo.
-              </p>
-            </div>
-          </div>
-        `
-      });
-    } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError);
-      // Still consider the password reset successful even if email fails
-    }
-
+    // ✅ PEHLE response bhejo
     res.json({
       success: true,
       message: 'Password reset successfully. You can now log in with your new password.',
     });
+
+    // ✅ BAAD MEIN confirmation email — non-blocking
+    // ✅ BUG FIX: transporter properly initialize ho raha hai
+    getTransporter().then(t => t.sendMail({
+      from: 'CodeDost <areebnadir3@gmail.com>',
+      to: user.email,
+      subject: '✅ CodeDost - Password Changed',
+      html: `
+        <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+          <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #10b981; text-align: center;">✅ Password Updated</h2>
+            <p style="color: #374151;">Salam ${user.name}!</p>
+            <p style="color: #374151;">Tumhara CodeDost password successfully change ho gaya!</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL}/codedost.html" style="background: #3b82f6; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to CodeDost</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">Agar ye tumne nahi kiya, toh turant support contact karo.</p>
+          </div>
+        </div>
+      `,
+    })).catch(err => console.error('❌ Confirmation email failed:', err.message));
 
   } catch (error) {
     console.error('Reset password error:', error);
