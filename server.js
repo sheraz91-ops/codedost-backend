@@ -25,34 +25,34 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
 ].filter(Boolean);
 
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === "development") {
-return  next();
-} else {
-  const allowed = [
-  process.env.FRONTEND_URL,
-  process.env.ALLOWED_ORIGIN,
-  'https://code-dost.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5500',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:5500',
-];
+// app.use((req, res, next) => {
+//   if (process.env.NODE_ENV === "development") {
+// return  next();
+// } else {
+//   const allowed = [
+//   process.env.FRONTEND_URL,
+//   process.env.ALLOWED_ORIGIN,
+//   'https://code-dost.vercel.app',
+//   'http://localhost:3000',
+//   'http://localhost:5500',
+//   'http://127.0.0.1:3000',
+//   'http://127.0.0.1:5500',
+// ];
 
-  const origin = req.headers.origin || "";
-  const referer = req.headers.referer || "";
+//   const origin = req.headers.origin || "";
+//   const referer = req.headers.referer || "";
 
-  const isValid =
-    allowed.some(url => origin === url) ||
-    allowed.some(url => referer.startsWith(url));
+//   const isValid =
+//     allowed.some(url => origin === url) ||
+//     allowed.some(url => referer.startsWith(url));
 
-  if (!isValid) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-}
+//   if (!isValid) {
+//     return res.status(403).json({ error: "Forbidden" });
+//   }
+// }
 
-  next();
-});
+//   next();
+// });
 
 const corsOptions = {
   origin: (origin, callback) => {
