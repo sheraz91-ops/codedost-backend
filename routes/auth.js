@@ -593,6 +593,7 @@ router.post('/reset-password', async (req, res) => {
     // ─── SEND CONFIRMATION EMAIL TO USER ──────────────────────────────
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
+      const transporter = await getTransporter();
       await transporter.sendMail({
         from: 'CodeDost <noreply@codedost.pk>',
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
