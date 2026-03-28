@@ -10,10 +10,11 @@ const router = express.Router();
 
 // ─── EMAIL TRANSPORTER SETUP ──────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.SMTP_HOST,        // smtp.mailtrap.io
+  port: process.env.SMTP_PORT,        // 2525
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.SMTP_USER,      // 37a80f9bde9e7b
+    pass: process.env.SMTP_PASS,      // 6df55cf2974843
   },
 });
 
