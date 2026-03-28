@@ -10,8 +10,17 @@ const router = express.Router();
 
 // ─── EMAIL TRANSPORTER SETUP ──────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
+<<<<<<< Updated upstream
   host: process.env.SMTP_HOST,        // smtp.mailtrap.io
   port: process.env.SMTP_PORT,        // 2525
+=======
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: false,  // ✅ ADD THIS (TLS on port 587)
+  tls: {
+    rejectUnauthorized: false  // ✅ ADD THIS
+  },
+>>>>>>> Stashed changes
   auth: {
     user: process.env.SMTP_USER,      // 37a80f9bde9e7b
     pass: process.env.SMTP_PASS,      // 6df55cf2974843
@@ -99,35 +108,39 @@ router.post('/register', validateRegister, async (req, res) => {
 
     // ─── SEND VERIFICATION EMAIL TO USER ───────────────────────────────
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
-    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?verify_token=${verificationToken}`;
-    transporter.sendMail({
-      from: 'CodeDost <noreply@codedost.pk>',
-      to: user.email,  // ✅ CHANGED: Email goes to user, not you
-      subject: '🔐 CodeDost - Email Verification',
-      html: `
-        <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
-          <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
-            <h2 style="color: #1f2937; text-align: center;">🇵🇰 CodeDost</h2>
-            <p style="color: #6b7280; font-size: 14px;">Salam ${name}!</p>
-            <p style="color: #374151;">Welcome to CodeDost - Pakistan ka pehla AI coding tutor!</p>
-            <p style="color: #374151; margin: 20px 0;">Apna email verify karne ke liye neeche button click karo:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationLink}" style="background: #f59e0b; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Email</a>
+    try {
+      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?verify_token=${verificationToken}`;
+      
+      await transporter.sendMail({
+        from: 'CodeDost <noreply@codedost.pk>',
+        to: user.email,  // ✅ CHANGED: Email goes to user, not you
+        subject: '🔐 CodeDost - Email Verification',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #1f2937; text-align: center;">🇵🇰 CodeDost</h2>
+              <p style="color: #6b7280; font-size: 14px;">Salam ${name}!</p>
+              <p style="color: #374151;">Welcome to CodeDost - Pakistan ka pehla AI coding tutor!</p>
+              <p style="color: #374151; margin: 20px 0;">Apna email verify karne ke liye neeche button click karo:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationLink}" style="background: #f59e0b; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Email</a>
+              </div>
+              <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
+                Ya ye link copy karo:<br>
+                <code style="background: #f3f4f6; padding: 5px 10px;">${verificationLink}</code>
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                Agar tumne signup nahi kiya, toh is email ko ignore karo.
+              </p>
             </div>
-            <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
-              Ya ye link copy karo:<br>
-              <code style="background: #f3f4f6; padding: 5px 10px;">${verificationLink}</code>
-            </p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              Agar tumne signup nahi kiya, toh is email ko ignore karo.
-            </p>
           </div>
-        </div>
-      `
-    }).catch((emailError) => {
+        `
+      });
+    } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
-    });
+      // Don't fail the registration, but log the error
+    }
 
     // Generate JWT tokens
     const accessToken = generateAccessToken(user._id);
