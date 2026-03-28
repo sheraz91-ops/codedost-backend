@@ -4,19 +4,9 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { validateRegister, validateLogin } = require('../middleware/validate');
-const nodemailer = require('nodemailer');
+const { getTransporter } = require('../services/emailService');
 
 const router = express.Router();
-
-// ─── EMAIL TRANSPORTER SETUP ──────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -68,11 +58,11 @@ const clearCookies = (res) => {
 // POST /api/auth/register
 router.post('/register', validateRegister, async (req, res) => {
   try {
-
     console.log("Registering user...", req.body);
+
     const { name, email, password, university } = req.body;
 
-    // Check if email already exists
+    // Check existing user
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({
@@ -81,7 +71,7 @@ router.post('/register', validateRegister, async (req, res) => {
       });
     }
 
-    // Create user (password will be hashed by pre-save hook in model)
+    // Create user
     const user = await User.create({
       name,
       email,
@@ -89,76 +79,102 @@ router.post('/register', validateRegister, async (req, res) => {
       university: university || undefined,
     });
 
-    // ─── GENERATE VERIFICATION TOKEN ───────────────────────────────────
+    // ─── GENERATE VERIFICATION TOKEN ───
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     user.emailVerificationToken = verificationToken;
     user.emailVerificationExpires = tokenExpiry;
     await user.save({ validateBeforeSave: false });
 
-    // ─── SEND VERIFICATION EMAIL TO USER ───────────────────────────────
-    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
+    // ─── SEND EMAIL ───
     try {
-      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?verify_token=${verificationToken}`;
-      
+      const transporter = await getTransporter();
+
+      const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
+
       await transporter.sendMail({
-        from: 'CodeDost <noreply@codedost.pk>',
-        to: user.email,  // ✅ CHANGED: Email goes to user, not you
-        subject: '🔐 CodeDost - Email Verification',
+        from: `CodeDost <${process.env.EMAIL_USER}>`, // ✅ FIXED
+        to: user.email,
+        subject: '🔐 Verify Your Email',
         html: `
-          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
-            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
-              <h2 style="color: #1f2937; text-align: center;">🇵🇰 CodeDost</h2>
-              <p style="color: #6b7280; font-size: 14px;">Salam ${name}!</p>
-              <p style="color: #374151;">Welcome to CodeDost - Pakistan ka pehla AI coding tutor!</p>
-              <p style="color: #374151; margin: 20px 0;">Apna email verify karne ke liye neeche button click karo:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${verificationLink}" style="background: #f59e0b; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Email</a>
-              </div>
-              <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
-                Ya ye link copy karo:<br>
-                <code style="background: #f3f4f6; padding: 5px 10px;">${verificationLink}</code>
-              </p>
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                Agar tumne signup nahi kiya, toh is email ko ignore karo.
-              </p>
-            </div>
+           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0;">✉️ Verify Your Email</h1>
+        </div>
+        
+        <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #333;">Welcome, ${name}!</h2>
+          
+          <p style="color: #666; line-height: 1.8;">Thank you for signing up to <strong>CodeDost</strong>! We're excited to have you on board.</p>
+          
+          <p style="color: #666; line-height: 1.8;">To get started, please verify your email address by clicking the button below:</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block;">
+              Verify Email Address
+            </a>
           </div>
-        `
+          
+          <p style="color: #999; font-size: 14px; text-align: center;">Or copy and paste this link:</p>
+          <p style="background-color: #f5f7fa; padding: 15px; border-radius: 5px; color: #555; word-break: break-all; font-size: 12px;">${verificationLink}</p>
+          
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="color: #856404; margin: 0;"><strong>⏱️ Important:</strong> This link expires in <strong>24 hours</strong>.</p>
+          </div>
+          
+          <p style="color: #999; font-size: 13px; margin-top: 30px;">If you didn't create this account, please ignore this email.</p>
+        </div>
+        
+        <div style="background-color: #f5f7fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
+          <p style="color: #999; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CodeDost. All rights reserved.</p>
+        </div>
+      </div>
+        `,
       });
+
+      console.log("✅ Email sent to:", user.email);
+
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail the registration, but log the error
+      console.error('❌ Email failed:', emailError.message);
     }
 
-    // Generate JWT tokens
+    // ─── TOKENS ───
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // Store hashed refresh token in DB
-    user.refreshToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    user.refreshToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
     await user.save({ validateBeforeSave: false });
 
-    // Set httpOnly cookies
+    // Cookies
     setCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully. Check your email to verify your account.',
+      message: 'Account created. Please verify your email.',
       user: user.toPublicJSON(),
     });
 
   } catch (error) {
     console.error('Register error:', error);
+
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Email already registered.' });
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered.',
+      });
     }
-    res.status(500).json({ success: false, message: 'Registration failed. Please try again.' });
+
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed.',
+    });
   }
 });
-
 // ─── VERIFY EMAIL ─────────────────────────────────────────────────────────────
 // GET /api/auth/verify-email?token=xxx
 router.get('/verify-email', async (req, res) => {
@@ -196,6 +212,7 @@ router.get('/verify-email', async (req, res) => {
     // ─── SEND WELCOME EMAIL TO USER ───────────────────────────────────
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
+      const transporter = await getTransporter();
       await transporter.sendMail({
         from: 'CodeDost <noreply@codedost.pk>',
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
@@ -470,6 +487,7 @@ router.post('/forgot-password', async (req, res) => {
     // ─── SEND RESET EMAIL TO USER ─────────────────────────────────────
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
+      const transporter = await getTransporter();
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?reset_token=${resetToken}`;
       
       await transporter.sendMail({
