@@ -6,24 +6,13 @@ const getTransporter = async () => {
   if (transporter) return transporter;
 
   transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,          // smtp.gmail.com
-    port: Number(process.env.EMAIL_PORT),  // 587
-    secure: process.env.EMAIL_SECURE === 'true',                         // ⚠️ must be false
+    host: 'smtp.resend.com',
+    port: 465,
+    secure: true,
     auth: {
-      user: process.env.EMAIL_USER,        // your gmail
-      pass: process.env.EMAIL_PASS,        // app password
+      user: 'resend',
+      pass: process.env.RESEND_API_KEY,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
-
-  transporter.verify((err) => {
-    if (err) {
-      console.log("❌ Email error:", err);
-    } else {
-      console.log("✅ Gmail SMTP ready");
-    }
   });
 
   return transporter;

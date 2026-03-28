@@ -94,7 +94,7 @@ router.post('/register', validateRegister, async (req, res) => {
       const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
 
       await transporter.sendMail({
-        from: `CodeDost <${process.env.EMAIL_USER}>`, // ✅ FIXED
+     from: 'CodeDost <onboarding@resend.dev>',
         to: user.email,
         subject: '🔐 Verify Your Email',
         html: `
@@ -214,7 +214,7 @@ router.get('/verify-email', async (req, res) => {
     try {
       const transporter = await getTransporter();
       await transporter.sendMail({
-        from: 'CodeDost <noreply@codedost.pk>',
+        from: 'CodeDost <onboarding@resend.dev>',
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
         subject: '✅ CodeDost - Welcome!',
         html: `
@@ -491,7 +491,7 @@ router.post('/forgot-password', async (req, res) => {
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?reset_token=${resetToken}`;
       
       await transporter.sendMail({
-        from: 'CodeDost <noreply@codedost.pk>',
+        from: 'CodeDost <onboarding@resend.dev>',
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
         subject: '🔑 CodeDost - Password Reset',
         html: `
@@ -594,7 +594,7 @@ router.post('/reset-password', async (req, res) => {
     // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
       await transporter.sendMail({
-        from: 'CodeDost <noreply@codedost.pk>',
+        from: 'CodeDost <onboarding@resend.dev>',
         to: user.email,  // ✅ CHANGED: Email goes to user, not you
         subject: '✅ CodeDost - Password Changed',
         html: `
