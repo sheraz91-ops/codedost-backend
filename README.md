@@ -11,6 +11,21 @@ cp .env.example .env
 npm run dev
 ```
 
+## Email configuration
+
+The backend requires SMTP credentials to send verification and welcome emails.
+
+Add the following values to your `.env` file:
+
+- `EMAIL_HOST`
+- `EMAIL_PORT`
+- `EMAIL_SECURE`
+- `EMAIL_USER`
+- `EMAIL_PASS`
+- `EMAIL_FROM`
+
+For development, if SMTP credentials are not provided, the app will automatically create an Ethereal test account and log the email preview URL.
+
 ## Endpoints
 
 | Method | Route | Auth | Description |

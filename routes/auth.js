@@ -57,6 +57,8 @@ const clearCookies = (res) => {
 // POST /api/auth/register
 router.post('/register', validateRegister, async (req, res) => {
   try {
+
+    console.log("Registering user...", req.body);
     const { name, email, password, university } = req.body;
 
     // Check if email already exists
@@ -84,10 +86,11 @@ router.post('/register', validateRegister, async (req, res) => {
     user.emailVerificationToken = verificationToken;
     user.emailVerificationExpires = tokenExpiry;
     await user.save({ validateBeforeSave: false });
-
+console.log("DB Token:", checkUser.emailVerificationToken);
     // ─── SEND VERIFICATION EMAIL ───────────────────────────────────────
     try {
       await sendVerificationEmail(
+        
         user.email,
         user.name,
         verificationToken,
@@ -129,7 +132,7 @@ router.post('/register', validateRegister, async (req, res) => {
 router.get('/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
-
+console.log(token)
     if (!token) {
       return res.status(400).json({
         success: false,
@@ -142,7 +145,7 @@ router.get('/verify-email', async (req, res) => {
       emailVerificationToken: token,
       emailVerificationExpires: { $gt: Date.now() }, // Token not expired
     });
-
+    console.log(user)
     if (!user) {
       return res.status(400).json({
         success: false,

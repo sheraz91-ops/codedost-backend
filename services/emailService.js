@@ -1,24 +1,86 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// ─── MAILTRAP TRANSPORTER ─────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'sandbox.smtp.mailtrap.io',
-  port: process.env.EMAIL_PORT || 2525,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+let transporter;
+let transporterMode = 'smtp';
 
-// Test connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Email service connection failed:', error);
-  } else {
-    console.log('✅ Email service ready! (Mailtrap)');
+const getTransporter = async () => {
+  if (transporter) {
+    return transporter;
   }
-});
+
+  const emailHost = process.env.EMAIL_HOST || 'sandbox.smtp.mailtrap.io';
+  const emailPort = parseInt(process.env.EMAIL_PORT, 10) || 2525;
+  const emailSecure = process.env.EMAIL_SECURE === 'true';
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("Transporter mode:", transporterMode);
+  if (emailUser && emailPass) {
+    transporterMode = 'smtp';
+    transporter = nodemailer.createTransport({
+      host: emailHost,
+      port: emailPort,
+      secure: emailSecure,
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+  } else if (process.env.NODE_ENV !== 'production') {
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      transporterMode = 'ethereal';
+      transporter = nodemailer.createTransport({
+        host: testAccount.smtp.host,
+        port: testAccount.smtp.port,
+        secure: testAccount.smtp.secure,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      console.warn('⚠️ EMAIL_USER or EMAIL_PASS not set. Using Ethereal test email account for development.');
+      console.warn(`⚠️ Preview messages at https://ethereal.email/messages`);
+    } catch (error) {
+      transporterMode = 'json';
+      console.warn('⚠️ Could not create Nodemailer test account. Falling back to JSON transport for development.');
+      console.warn(`⚠️ ${error.message}`);
+      transporter = nodemailer.createTransport({ jsonTransport: true });
+      console.warn('⚠️ Emails will be generated as JSON and not actually sent.');
+    }
+  } else {
+    const error = new Error('Missing EMAIL_USER and EMAIL_PASS for SMTP transport. Set SMTP credentials in .env before starting the app.');
+    console.error('❌ Email service initialization failed:', error.message);
+    throw error;
+  }
+
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Email service connection failed:', error);
+    } else {
+      console.log('✅ Email service ready!');
+    }
+  });
+
+  return transporter;
+};
+
+const logMailInfo = (info) => {
+  if (transporterMode === 'ethereal') {
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.warn(`📨 Preview email at: ${previewUrl}`);
+    }
+  } else if (transporterMode === 'json') {
+    console.warn('📨 JSON transport active. Email payload generated but not sent.');
+    console.warn(JSON.stringify(info, null, 2));
+  }
+};
+
+const getDefaultFromAddress = () => {
+  return process.env.EMAIL_FROM || 'noreply@codedost.com';
+};
 
 // ─── GENERATE VERIFICATION TOKEN ──────────────────────────────────────────
 const generateVerificationToken = () => {
@@ -28,7 +90,7 @@ const generateVerificationToken = () => {
 // ─── SEND VERIFICATION EMAIL ─────────────────────────────────────────────
 const sendVerificationEmail = async (email, name, token, frontendUrl) => {
   try {
-    const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
+    const verificationLink = `${frontendUrl}/?token=${token}`;
     
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
@@ -65,14 +127,16 @@ const sendVerificationEmail = async (email, name, token, frontendUrl) => {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: 'noreply@codedost.com',
+    const transport = await getTransporter();
+    const info = await transport.sendMail({
+      from: getDefaultFromAddress(),
       to: email,
       subject: '🔐 Verify Your Email - CodeDost',
       html: htmlContent,
     });
 
     console.log(`✅ Verification email sent to ${email}`);
+    logMailInfo(info);
     return true;
   } catch (error) {
     console.error('❌ Verification email failed:', error.message);
@@ -118,14 +182,16 @@ const sendPasswordResetEmail = async (email, name, resetToken, frontendUrl) => {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: 'noreply@codedost.com',
+    const transport = await getTransporter();
+    const info = await transport.sendMail({
+      from: getDefaultFromAddress(),
       to: email,
       subject: '🔑 Reset Your Password - CodeDost',
       html: htmlContent,
     });
 
     console.log(`✅ Password reset email sent to ${email}`);
+    logMailInfo(info);
     return true;
   } catch (error) {
     console.error('❌ Password reset email failed:', error.message);
@@ -169,14 +235,16 @@ const sendWelcomeEmail = async (email, name) => {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: 'noreply@codedost.com',
+    const transport = await getTransporter();
+    const info = await transport.sendMail({
+      from: getDefaultFromAddress(),
       to: email,
       subject: '🎉 Welcome to CodeDost!',
       html: htmlContent,
     });
 
     console.log(`✅ Welcome email sent to ${email}`);
+    logMailInfo(info);
     return true;
   } catch (error) {
     console.error('❌ Welcome email failed:', error.message);

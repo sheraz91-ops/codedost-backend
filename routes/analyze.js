@@ -6,7 +6,11 @@ const { checkUsageLimit, incrementUsage, getFingerprint } = require('../middlewa
 const { validateAnalysis } = require('../middleware/validate');
 
 const router = express.Router();
-
+// /status - GET usage status
+// /log - POST log an analysis (called after successful analysis)
+// /check - POST pre-flight check before analysis
+// /history - GET my analysis history
+// /understood/:logId - PATCH mark if I understood the feedback
 
 // ─── CHECK USAGE STATUS ──────────────────────────────────────────────────────
 // GET /api/usage/status
