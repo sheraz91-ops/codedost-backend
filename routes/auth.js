@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { validateRegister, validateLogin } = require('../middleware/validate');
-const { getTransporter } = require('../services/emailService');
+const { sendEmail } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -85,7 +85,7 @@ router.post('/register', validateRegister, async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // ✅ PEHLE cookies aur response bhejo — Railway timeout nahi hoga
+    // ✅ PEHLE response bhejo — Railway timeout nahi hoga
     setCookies(res, accessToken, refreshToken);
     res.status(201).json({
       success: true,
@@ -93,10 +93,9 @@ router.post('/register', validateRegister, async (req, res) => {
       user: user.toPublicJSON(),
     });
 
-    // ✅ BAAD MEIN email bhejo — non-blocking fire and forget
+    // ✅ BAAD MEIN email — non-blocking fire and forget
     const verificationLink = `${process.env.FRONTEND_URL}/codedost.html?verify_token=${verificationToken}`;
-    getTransporter().then(t => t.sendMail({
-      from: 'CodeDost <areebnadir3@gmail.com>',
+    sendEmail({
       to: user.email,
       subject: '🔐 Verify Your Email',
       html: `
@@ -125,7 +124,7 @@ router.post('/register', validateRegister, async (req, res) => {
           </div>
         </div>
       `,
-    })).catch(err => console.error('❌ Email failed:', err.message));
+    }).catch(err => console.error('❌ Verification email failed:', err.message));
 
   } catch (error) {
     console.error('Register error:', error);
@@ -184,8 +183,7 @@ router.get('/verify-email', async (req, res) => {
     });
 
     // ✅ BAAD MEIN welcome email — non-blocking
-    getTransporter().then(t => t.sendMail({
-      from: 'CodeDost <areebnadir3@gmail.com>',
+    sendEmail({
       to: user.email,
       subject: '✅ CodeDost - Welcome!',
       html: `
@@ -202,7 +200,7 @@ router.get('/verify-email', async (req, res) => {
           </div>
         </div>
       `,
-    })).catch(err => console.error('❌ Welcome email failed:', err.message));
+    }).catch(err => console.error('❌ Welcome email failed:', err.message));
 
   } catch (error) {
     console.error('Verify email error:', error);
@@ -271,7 +269,6 @@ router.post('/logout', protect, async (req, res) => {
     });
 
     clearCookies(res);
-
     res.json({ success: true, message: 'Logged out successfully.' });
 
   } catch (error) {
@@ -431,8 +428,7 @@ router.post('/forgot-password', async (req, res) => {
 
     // ✅ BAAD MEIN email — non-blocking
     const resetLink = `${process.env.FRONTEND_URL}/codedost.html?reset_token=${resetToken}`;
-    getTransporter().then(t => t.sendMail({
-      from: 'CodeDost <areebnadir3@gmail.com>',
+    sendEmail({
       to: user.email,
       subject: '🔑 CodeDost - Password Reset',
       html: `
@@ -454,13 +450,7 @@ router.post('/forgot-password', async (req, res) => {
           </div>
         </div>
       `,
-    })).catch(async (err) => {
-      console.error('❌ Reset email failed:', err.message);
-      // Token clear karo agar email fail ho
-      user.passwordResetToken = null;
-      user.passwordResetExpires = null;
-      await user.save({ validateBeforeSave: false });
-    });
+    }).catch(err => console.error('❌ Reset email failed:', err.message));
 
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -520,9 +510,7 @@ router.post('/reset-password', async (req, res) => {
     });
 
     // ✅ BAAD MEIN confirmation email — non-blocking
-    // ✅ BUG FIX: transporter properly initialize ho raha hai
-    getTransporter().then(t => t.sendMail({
-      from: 'CodeDost <areebnadir3@gmail.com>',
+    sendEmail({
       to: user.email,
       subject: '✅ CodeDost - Password Changed',
       html: `
@@ -539,7 +527,7 @@ router.post('/reset-password', async (req, res) => {
           </div>
         </div>
       `,
-    })).catch(err => console.error('❌ Confirmation email failed:', err.message));
+    }).catch(err => console.error('❌ Confirmation email failed:', err.message));
 
   } catch (error) {
     console.error('Reset password error:', error);
