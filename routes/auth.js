@@ -4,8 +4,18 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { validateRegister, validateLogin } = require('../middleware/validate');
+const nodemailer = require('nodemailer');
 
 const router = express.Router();
+
+// ─── EMAIL TRANSPORTER SETUP ──────────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -79,23 +89,44 @@ router.post('/register', validateRegister, async (req, res) => {
     });
 
     // ─── GENERATE VERIFICATION TOKEN ───────────────────────────────────
-    const { generateVerificationToken, sendVerificationEmail } = require('../services/emailService');
-    const verificationToken = generateVerificationToken();
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     user.emailVerificationToken = verificationToken;
     user.emailVerificationExpires = tokenExpiry;
     await user.save({ validateBeforeSave: false });
-console.log("DB Token:", checkUser.emailVerificationToken);
-    // ─── SEND VERIFICATION EMAIL ───────────────────────────────────────
+
+    // ─── SEND VERIFICATION EMAIL TO USER ───────────────────────────────
+    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
-      await sendVerificationEmail(
-        
-        user.email,
-        user.name,
-        verificationToken,
-        process.env.FRONTEND_URL || 'http://localhost:3000'
-      );
+      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?verify_token=${verificationToken}`;
+      
+      await transporter.sendMail({
+        from: 'CodeDost <noreply@codedost.pk>',
+        to: user.email,  // ✅ CHANGED: Email goes to user, not you
+        subject: '🔐 CodeDost - Email Verification',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #1f2937; text-align: center;">🇵🇰 CodeDost</h2>
+              <p style="color: #6b7280; font-size: 14px;">Salam ${name}!</p>
+              <p style="color: #374151;">Welcome to CodeDost - Pakistan ka pehla AI coding tutor!</p>
+              <p style="color: #374151; margin: 20px 0;">Apna email verify karne ke liye neeche button click karo:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationLink}" style="background: #f59e0b; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Email</a>
+              </div>
+              <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
+                Ya ye link copy karo:<br>
+                <code style="background: #f3f4f6; padding: 5px 10px;">${verificationLink}</code>
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                Agar tumne signup nahi kiya, toh is email ko ignore karo.
+              </p>
+            </div>
+          </div>
+        `
+      });
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
       // Don't fail the registration, but log the error
@@ -132,7 +163,8 @@ console.log("DB Token:", checkUser.emailVerificationToken);
 router.get('/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
-console.log(token)
+    console.log(token)
+    
     if (!token) {
       return res.status(400).json({
         success: false,
@@ -146,6 +178,7 @@ console.log(token)
       emailVerificationExpires: { $gt: Date.now() }, // Token not expired
     });
     console.log(user)
+    
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -159,10 +192,31 @@ console.log(token)
     user.emailVerificationExpires = null;
     await user.save({ validateBeforeSave: false });
 
-    // ─── SEND WELCOME EMAIL ───────────────────────────────────────────
+    // ─── SEND WELCOME EMAIL TO USER ───────────────────────────────────
+    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
-      const { sendWelcomeEmail } = require('../services/emailService');
-      await sendWelcomeEmail(user.email, user.name);
+      await transporter.sendMail({
+        from: 'CodeDost <noreply@codedost.pk>',
+        to: user.email,  // ✅ CHANGED: Email goes to user, not you
+        subject: '✅ CodeDost - Welcome!',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #10b981; text-align: center;">✅ Welcome to CodeDost!</h2>
+              <p style="color: #374151;">Salam ${user.name}!</p>
+              <p style="color: #374151;">Tumhara email successfully verify ho gaya. Ab tum CodeDost use kar sakte ho!</p>
+              <p style="color: #374151; margin: 20px 0;">Ab tum login karke code analyze kar sakte ho:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html" style="background: #3b82f6; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to CodeDost</a>
+              </div>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                Happy coding! 🇵🇰
+              </p>
+            </div>
+          </div>
+        `
+      });
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Don't fail the verification, just log the error
@@ -378,7 +432,9 @@ router.patch('/change-password', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Password change failed.' });
   }
 });
-// ─── FORGOT PASSWORD ──────────────────────────────────────────────────────
+
+
+// ─── FORGOT PASSWORD ──────────────────────────────────────────────────────────
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -403,22 +459,47 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     // ─── GENERATE RESET TOKEN ─────────────────────────────────────────
-    const { generateVerificationToken, sendPasswordResetEmail } = require('../services/emailService');
-    const resetToken = generateVerificationToken();
+    const resetToken = crypto.randomBytes(32).toString('hex');
     const tokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
 
     user.passwordResetToken = resetToken;
     user.passwordResetExpires = tokenExpiry;
     await user.save({ validateBeforeSave: false });
 
-    // ─── SEND RESET EMAIL ─────────────────────────────────────────────
+    // ─── SEND RESET EMAIL TO USER ─────────────────────────────────────
+    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
     try {
-      await sendPasswordResetEmail(
-        user.email,
-        user.name,
-        resetToken,
-        process.env.FRONTEND_URL || 'http://localhost:3000'
-      );
+      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html?reset_token=${resetToken}`;
+      
+      await transporter.sendMail({
+        from: 'CodeDost <noreply@codedost.pk>',
+        to: user.email,  // ✅ CHANGED: Email goes to user, not you
+        subject: '🔑 CodeDost - Password Reset',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #1f2937; text-align: center;">🔑 Password Reset</h2>
+              <p style="color: #374151;">Salam ${user.name}!</p>
+              <p style="color: #374151;">Tumhare CodeDost account ke liye password reset request aayi hai.</p>
+              <p style="color: #374151; margin: 20px 0;">Password reset karne ke liye neeche click karo:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetLink}" style="background: #10b981; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+              </div>
+              <p style="color: #6b7280; font-size: 12px; word-break: break-all;">
+                Ya ye link copy karo:<br>
+                <code style="background: #f3f4f6; padding: 5px 10px;">${resetLink}</code>
+              </p>
+              <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
+                Link 1 hour ke liye valid hai.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                Agar tumne ye request nahi ki, toh is email ko ignore karo.
+              </p>
+            </div>
+          </div>
+        `
+      });
     } catch (emailError) {
       // If email fails, clear the reset token
       user.passwordResetToken = null;
@@ -442,7 +523,9 @@ router.post('/forgot-password', async (req, res) => {
     res.status(500).json({ success: false, message: 'Password reset failed.' });
   }
 });
-// ─── RESET PASSWORD ───────────────────────────────────────────────────────
+
+
+// ─── RESET PASSWORD ───────────────────────────────────────────────────────────
 // POST /api/auth/reset-password
 router.post('/reset-password', async (req, res) => {
   try {
@@ -487,6 +570,36 @@ router.post('/reset-password', async (req, res) => {
     user.passwordResetToken = null;
     user.passwordResetExpires = null;
     await user.save();
+
+    // ─── SEND CONFIRMATION EMAIL TO USER ──────────────────────────────
+    // ✅ CHANGED: Email goes to user.email (not to process.env.SMTP_USER)
+    try {
+      await transporter.sendMail({
+        from: 'CodeDost <noreply@codedost.pk>',
+        to: user.email,  // ✅ CHANGED: Email goes to user, not you
+        subject: '✅ CodeDost - Password Changed',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #f3f4f6; padding: 20px;">
+            <div style="background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #10b981; text-align: center;">✅ Password Updated</h2>
+              <p style="color: #374151;">Salam ${user.name}!</p>
+              <p style="color: #374151;">Tumhara CodeDost password successfully change ho gaya!</p>
+              <p style="color: #374151; margin: 20px 0;">Ab tum apna naya password use karke login kar sakte ho:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/codedost.html" style="background: #3b82f6; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to CodeDost</a>
+              </div>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                Agar ye tumne nahi kiya, toh turant support contact karo.
+              </p>
+            </div>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Still consider the password reset successful even if email fails
+    }
 
     res.json({
       success: true,
