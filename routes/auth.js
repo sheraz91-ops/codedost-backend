@@ -95,6 +95,8 @@ router.post('/register', validateRegister, async (req, res) => {
 
       await transporter.sendMail({
      from: `CodeDost <${process.env.EMAIL_USER}>`,
+     
+     
         to: user.email,
         subject: '🔐 Verify Your Email',
         html: `
